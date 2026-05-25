@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
-import { Job }  from '@/app/lib/models';
-import { Customer } from '@/app/lib/models';
-import { JobAssignee } from '@/app/lib/models';
+import { getModels } from '@/app/lib/models';
 import { serializeJob } from '@/app/lib/types';
 import type { JobDTO } from '@/app/lib/types';
 
 export const runtime = 'nodejs';
 
-// ─── GET /api/jobs ──────────────────────────────────────────────────────────
 export async function GET(request: Request) {
   try {
+    const { Job, Customer, JobAssignee } = await getModels();
     const url       = new URL(request.url);
     const status    = url.searchParams.get('status');
     const customer  = url.searchParams.get('customerId');
@@ -29,10 +27,11 @@ export async function GET(request: Request) {
     });
 
     const payload: JobDTO[] = [];
+    const { User } = await getModels();
     for (const j of jobs as any[]) {
       const assignees = await (JobAssignee as any).findAll({
         where: { job_id: j.id },
-        include: [{ model: (require('@/app/lib/models') as any).User, as: 'user', attributes: ['id','full_name','email'] }],
+        include: [{ model: User, as: 'user', attributes: ['id','full_name','email'] }],
       });
       payload.push({
         ...serializeJob(j, false),
@@ -52,9 +51,9 @@ export async function GET(request: Request) {
   }
 }
 
-// ─── POST /api/jobs ──────────────────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
+    const { Job } = await getModels();
     const body = await request.json();
     const { title, description, location, category, budget, expenses, deadline, status, customerId } = body;
 

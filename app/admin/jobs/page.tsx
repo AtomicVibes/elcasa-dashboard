@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import Sidebar from '@/app/components/Sidebar';
 import { useLanguage } from '@/context/LanguageContext';
-import { Job } from '@/app/lib/models';
 import type { JobDTO } from '@/app/lib/types';
 import { CustomDatePicker } from '@/components/ui/custom-date-picker';
 

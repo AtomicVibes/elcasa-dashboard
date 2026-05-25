@@ -1,18 +1,12 @@
 import { NextResponse } from 'next/server';
-import { Job, Customer, JobAssignee } from '@/app/lib/models';
+import { getModels } from '@/app/lib/models';
 import { serializeJob } from '@/app/lib/types';
 import type { JobDTO } from '@/app/lib/types';
 
 export const runtime = 'nodejs';
 
-if (!(Job as any).sequelize) {
-  const m = require('@/app/lib/models') as typeof import('@/app/lib/models');
-  (Job as any).sequelize       = m.sequelize;
-  (Customer as any).sequelize  = m.sequelize;
-  (JobAssignee as any).sequelize = m.sequelize;
-}
-
 async function getJobWithAssignees(jobId: number): Promise<any & { assignees?: any[] }> {
+  const { Job, Customer, JobAssignee } = await getModels();
   const job = await Job.findByPk(jobId, {
     include: [{
       model: Customer,
@@ -22,14 +16,14 @@ async function getJobWithAssignees(jobId: number): Promise<any & { assignees?: a
   });
   if (!job) return null;
 
+  const { User } = await getModels();
   const assignees = await JobAssignee.findAll({
     where: { job_id: jobId },
-    include: [{ model: (require('@/app/lib/models') as any).User, as: 'user', attributes: ['id','full_name','email'] }],
+    include: [{ model: User, as: 'user', attributes: ['id','full_name','email'] }],
   });
   return { ...job.toJSON(), assignees };
 }
 
-// ─── GET /api/jobs/[id] ──────────────────────────────────────────────────────
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -45,12 +39,12 @@ export async function GET(
   }
 }
 
-// ─── PATCH /api/jobs/[id] ────────────────────────────────────────────────────
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { Job } = await getModels();
     const { id } = await params;
     const body    = await request.json();
 
@@ -80,12 +74,12 @@ export async function PATCH(
   }
 }
 
-// ─── DELETE /api/jobs/[id] ───────────────────────────────────────────────────
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { Job } = await getModels();
     const { id } = await params;
     const count   = await Job.destroy({ where: { id: Number(id) } });
     if (!count) return NextResponse.json({ error: 'Not found' }, { status: 404 });

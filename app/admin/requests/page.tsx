@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/app/components/Sidebar';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabase } from '@/app/lib/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface RequestItem {
@@ -22,7 +22,7 @@ export default function RequestsIndex() {
 
   useEffect(() => {
     async function pullData() {
-      const { data } = await supabase
+      const { data } = await getSupabase()
         .from('renovation_requests')
         .select('id, client_name, address, estimated_budget, status')
         .order('created_at', { ascending: false });

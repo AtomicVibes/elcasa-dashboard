@@ -3,7 +3,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { useLanguage } from '@/context/LanguageContext';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabase } from '@/app/lib/supabase';
 import toast from 'react-hot-toast';
 
 export default function NewCaseCreationForm() {
@@ -25,7 +25,7 @@ export default function NewCaseCreationForm() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('renovation_requests')
       .insert([
         {

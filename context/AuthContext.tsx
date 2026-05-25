@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { supabase } from "@/app/lib/supabase";
+import { getSupabase } from "@/app/lib/supabase";
 
 export type PermissionRole =
   | "SUPER_ADMIN"
@@ -40,7 +40,7 @@ const AUTH_PROFILES_TABLE = "profiles";
 
 async function fetchPermissionRole(userId: string): Promise<PermissionRole> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from(AUTH_PROFILES_TABLE)
       .select("permissionRole")
       .eq("id", userId)
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadSessionAndRole = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await getSupabase().auth.getSession();
     if (error) {
       // eslint-disable-next-line no-console
       console.error("getSession error:", error);
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadSessionAndRole();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event: string, nextSession: Session | null) => {
+    const { data: sub } = getSupabase().auth.onAuthStateChange(async (_event: string, nextSession: Session | null) => {
 
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadSessionAndRole]);
 
   const signIn = useCallback(async ({ email, password }: { email: string; password: string }) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await getSupabase().auth.signInWithPassword({ email, password });
     if (error) throw error;
   }, []);
 
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }) => {
       // We rely on DB trigger to create profiles row on signup.
       // But we still store full_name/phone_number for convenience if trigger isn't set for them.
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await getSupabase().auth.signUp({
         email,
         password,
         options: {
@@ -153,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await getSupabase().auth.signOut();
     if (error) throw error;
   }, []);
 
@@ -163,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       permissionRole,
       loading,
-      supabase,
+      supabase: getSupabase(),
       signIn,
       signUp,
       signOut,

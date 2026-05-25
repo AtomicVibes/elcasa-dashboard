@@ -1,23 +1,18 @@
 import { NextResponse } from 'next/server';
-import { User } from '@/app/lib/models';
+import { getModels } from '@/app/lib/models';
 import { serializeUser } from '@/app/lib/types';
 import type { UserDTO } from '@/app/lib/types';
 
 export const runtime = 'nodejs';
 
-if (!(User as any).sequelize) {
-  (User as any).sequelize = (require('@/app/lib/models') as any).sequelize;
-}
-const UserTable = User;
-
-// ─── GET /api/users/[id] ────────────────────────────────────────────────────
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { User } = await getModels();
     const { id } = await params;
-    const row     = await UserTable.findByPk(Number(id));
+    const row     = await (User as any).findByPk(Number(id));
     if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json<UserDTO>(serializeUser(row));
   } catch (err) {
@@ -26,12 +21,12 @@ export async function GET(
   }
 }
 
-// ─── PATCH /api/users/[id] ───────────────────────────────────────────────────
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { User } = await getModels();
     const { id } = await params;
     const body    = await request.json();
 
@@ -57,7 +52,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'No valid update fields' }, { status: 400 });
     }
 
-    const [updated] = await UserTable.update(updates, { where: { id: Number(id) }, returning: true });
+    const [updated] = await (User as any).update(updates, { where: { id: Number(id) }, returning: true });
     if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     return NextResponse.json<UserDTO>(serializeUser(updated));
@@ -67,14 +62,14 @@ export async function PATCH(
   }
 }
 
-// ─── DELETE /api/users/[id] ──────────────────────────────────────────────────
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { User } = await getModels();
     const { id } = await params;
-    const count = await UserTable.destroy({ where: { id: Number(id) } });
+    const count = await (User as any).destroy({ where: { id: Number(id) } });
     if (!count) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ deleted: true });
   } catch (err) {

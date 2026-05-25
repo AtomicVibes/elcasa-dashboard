@@ -1,21 +1,14 @@
 import { NextResponse } from 'next/server';
-import { User } from '@/app/lib/models';
+import { getModels } from '@/app/lib/models';
 import { serializeUser } from '@/app/lib/types';
 import type { UserDTO } from '@/app/lib/types';
 
 export const runtime = 'nodejs';
 
-// Ensure DB connection on cold-start
-if (!(User as any).sequelize) {
-  (User as any).sequelize = (require('@/app/lib/models') as any).sequelize;
-}
-
-function getTable(): any { return User; }
-
-// ─── GET /api/users ─────────────────────────────────────────────────────────
 export async function GET(_req: Request) {
   try {
-    const rows    = await getTable().findAll({ order: [['created_at', 'ASC']] });
+    const { User } = await getModels();
+    const rows    = await (User as any).findAll({ order: [['created_at', 'ASC']] });
     const payload = rows.map((r: any) => serializeUser(r));
     return NextResponse.json<UserDTO[]>(payload);
   } catch (err) {
@@ -24,9 +17,9 @@ export async function GET(_req: Request) {
   }
 }
 
-// ─── POST /api/users ─────────────────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
+    const { User } = await getModels();
     const body = await request.json();
     const {
       email,
@@ -46,9 +39,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'email and fullName are required' }, { status: 400 });
     }
 
-    const passwordHash = password ? require('bcryptjs').hashSync(password, 12) : null;
+    const bcryptjs = await import('bcryptjs');
+    const passwordHash = password ? bcryptjs.hashSync(password, 12) : null;
 
-    const created = await getTable().create({
+    const created = await (User as any).create({
       email,
       full_name:        fullName,
       phone:            phone ?? null,

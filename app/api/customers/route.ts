@@ -1,10 +1,12 @@
 import type { NextRequest } from 'next/server';
+import { getModels } from '@/app/lib/models';
 
-import { Customer } from '@/app/lib/models';
+export const runtime = 'nodejs';
 
 export async function GET(_req: NextRequest) {
   try {
-    const customers = await Customer.findAll({
+    const { Customer } = await getModels();
+    const customers = await (Customer as any).findAll({
       order: [['createdAt', 'DESC']],
       raw: true,
     });
@@ -22,4 +24,3 @@ export async function GET(_req: NextRequest) {
     );
   }
 }
-

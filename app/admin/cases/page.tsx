@@ -9,11 +9,11 @@ import {
   Pencil, Trash2, Archive, FileText
 } from 'lucide-react';
 import { CustomDatePicker } from '@/components/ui/custom-date-picker';
+import { FilterButtonGroup } from '@/components/FilterButtonGroup';
+import { useProjectFilters } from '@/hooks/useProjectFilters';
+import type { Project } from '@/hooks/useProjectFilters';
 
-// ══════════════════════════════════════════════════════════════════════════
-//  Data layer — untouched
-// ══════════════════════════════════════════════════════════════════════════
-const activeCases = [
+const activeCases: Project[] = [
   { id: 'prj-1',  title: 'Ristrutturazione Via Roma 12', location: 'Milan, Italy',     manager: 'Luca Rossi',    managerRole: 'Project Manager', reviewer: 'Marco Verdi',   progress: '45%', budget: 128000,  expenses: 57600,  deadline: '2026-08-15', category: 'Renovation',       duration: 'Long Duration',  status: 'In Progress'  },
   { id: 'prj-2',  title: 'New Office Palazzo Nuova',   location: 'Rome, Italy',       manager: 'Giulia Bianchi',managerRole: 'Super User',    reviewer: 'Luca Rossi',    progress: '72%', budget: 450000,  expenses: 324000, deadline: '2026-07-01', category: 'Construction',     duration: 'Long Duration',  status: 'In Progress'  },
   { id: 'prj-3',  title: 'Minimalist Villa Restyling', location: 'Lake Como, Italy',  manager: 'Luca Rossi',    managerRole: 'Project Manager',reviewer: 'Giulia Bianchi',progress: '28%', budget: 89000,   expenses: 24920,  deadline: '2026-10-30', category: 'Design',          duration: 'Short Duration', status: 'Pending'     },
@@ -22,16 +22,12 @@ const activeCases = [
   { id: 'prj-6',  title: 'Hotel Lobby Concept',        location: 'Milan, Italy',      manager: 'Luca Rossi',    managerRole: 'Project Manager',reviewer: 'Giulia Bianchi',progress: '90%', budget: 210000,  expenses: 189000, deadline: '2026-06-25', category: 'Design',          duration: 'Short Duration', status: 'Cancelled'   },
 ];
 
-// Shared team roster (single source of truth for both Sidebar and this page)
 const teamProfiles = [
   { id: 1, name: 'Luca Rossi',    email: 'luca@elcasa.com',    role: 'Super User',     function: 'Architect'      },
   { id: 2, name: 'Giulia Bianchi',email: 'giulia@elcasa.com',  role: 'Project Manager',function: 'Project Manager' },
   { id: 3, name: 'Marco Verdi',   email: 'marco@elcasa.com',   role: 'User',           function: 'Engineer'       },
 ];
 
-// ══════════════════════════════════════════════════════════════════════════
-//  Static category directory for the New Project form optgroup
-// ══════════════════════════════════════════════════════════════════════════
 const categoryGroups = [
   {
     label: 'Residential Construction',
@@ -59,22 +55,14 @@ const categoryGroups = [
   },
 ];
 
-// ══════════════════════════════════════════════════════════════════════════
-//  Component
-// ══════════════════════════════════════════════════════════════════════════
 export default function CaseFilesIndex() {
   const { t } = useLanguage();
 
+  const { filters, setCategory, setDuration, setStatus, activeProjects, isEmpty } = useProjectFilters(activeCases);
 
-
-  // ── Client-side filter / sort / expansion / new-project state ───────────
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [durationFilter, setDurationFilter] = useState('all');
-  const [statusFilter, setStatusFilter]   = useState('all');
-  const [activeSort, setActiveSort]       = useState('closest-deadline');
+  const [activeSort, setActiveSort] = useState('closest-deadline');
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
 
-  // ── New Project modal state ─────────────────────────────────────────────
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [newTitle,   setNewTitle]   = useState('');
   const [newCategory,setNewCategory] = useState('');
@@ -86,42 +74,12 @@ export default function CaseFilesIndex() {
     return Number.isNaN(d.getTime()) ? null : d;
   };
 
-  // Member filter (toolbar)
   const allMembers = useMemo(() =>
     [...new Set(activeCases.map(c => c.manager))], []);
   const [memberFilter, setMemberFilter] = useState('all');
 
-  // ── Derived: filtered then sorted dataset ──────────────────────────────
   const filteredAndSorted = useMemo(() => {
-    let result = [...activeCases];
-
-    if (categoryFilter !== 'all') {
-      const labelMap: Record<string, string> = {
-        construction: 'Construction',
-        renovation: 'Renovation',
-        architecture: 'Architecture',
-        design: 'Design',
-      };
-      result = result.filter(c => c.category === labelMap[categoryFilter]);
-    }
-
-    if (durationFilter !== 'all') {
-      const durationMap: Record<string, string> = {
-        'short': 'Short Duration',
-        'long':  'Long Duration',
-      };
-      result = result.filter(c => c.duration === durationMap[durationFilter]);
-    }
-
-    if (statusFilter !== 'all') {
-      const statusMap: Record<string, string> = {
-        'in-progress': 'In Progress',
-        pending:       'Pending',
-        completed:     'Completed',
-        cancelled:     'Cancelled',
-      };
-      result = result.filter(c => c.status === statusMap[statusFilter]);
-    }
+    let result = [...activeProjects];
 
     if (memberFilter !== 'all') {
       result = result.filter(c => c.manager === memberFilter);
@@ -146,15 +104,12 @@ export default function CaseFilesIndex() {
     }
 
     return result;
-  }, [activeCases, categoryFilter, durationFilter, statusFilter, memberFilter, activeSort]);
+  }, [activeProjects, memberFilter, activeSort]);
 
-  // ── Re-assign a project to a team member ──────────────────────────────
   const handleReassign = (projectId: string, memberName: string) => {
-    // Silent local-state update
     toast.success(`Project successfully re-assigned to ${memberName}!`);
   };
 
-  // ── Create a new project entry ────────────────────────────────────────
   const handleCreateProject = () => {
     if (!newTitle.trim() || !newCategory || !newDeadline) return;
 
@@ -164,7 +119,7 @@ export default function CaseFilesIndex() {
     activeCases.push({
       id:        newId,
       title:     newTitle.trim(),
-      location:  '—',
+      location:  '\u2014',
       manager:   teamProfiles[0].name,
       managerRole: teamProfiles[0].function,
       reviewer:  teamProfiles[1].name,
@@ -184,40 +139,36 @@ export default function CaseFilesIndex() {
     toast.success('Success: Current Project list updated!');
   };
 
-  // ── Pill / chip helpers ────────────────────────────────────────────────
-  const currency = (n: number) => `€ ${n.toLocaleString('en-IE')}`;
+  const currency = (n: number) => `\u20AC ${n.toLocaleString('en-IE')}`;
 
-  const categoryPills = [
-    { key: 'all',          label: 'All Categories'  },
-    { key: 'construction', label: 'Construction'    },
-    { key: 'renovation',   label: 'Renovation'      },
-    { key: 'architecture', label: 'Architecture'    },
-    { key: 'design',       label: 'Design'          },
+  const categoryOptions = [
+    { key: 'all',          label: t('cases.categories.all'),          i18nKey: 'cases.categories.all' },
+    { key: 'construction', label: t('cases.categories.construction'), i18nKey: 'cases.categories.construction' },
+    { key: 'renovation',   label: t('cases.categories.renovation'),   i18nKey: 'cases.categories.renovation' },
+    { key: 'architecture', label: t('cases.categories.architecture'), i18nKey: 'cases.categories.architecture' },
+    { key: 'design',       label: t('cases.categories.design'),       i18nKey: 'cases.categories.design' },
   ];
 
-  const durationPills = [
-    { key: 'all',    label: 'All Durations'  },
-    { key: 'short',  label: 'Short Duration' },
-    { key: 'long',   label: 'Long Duration'  },
+  const durationOptions = [
+    { key: 'all',   label: t('allDurations'), i18nKey: 'allDurations' },
+    { key: 'short', label: t('short'),        i18nKey: 'short' },
+    { key: 'long',  label: t('long'),         i18nKey: 'long' },
   ];
 
-  const statusPills = [
-    { key: 'all',         label: 'All Statuses'  },
-    { key: 'in-progress', label: 'In Progress'   },
-    { key: 'pending',     label: 'Pending'        },
-    { key: 'completed',   label: 'Completed'      },
-    { key: 'cancelled',   label: 'Cancelled'      },
+  const statusOptions = [
+    { key: 'all',         label: t('allStatuses'), i18nKey: 'allStatuses' },
+    { key: 'in-progress', label: t('inProgress'),  i18nKey: 'inProgress' },
+    { key: 'pending',     label: t('pending'),      i18nKey: 'pending' },
+    { key: 'completed',   label: t('completed'),    i18nKey: 'completed' },
+    { key: 'cancelled',   label: t('cancelled'),    i18nKey: 'cancelled' },
   ];
-
-  const pillActive   = 'bg-[#FFB800]/10 border-[#FFB800] text-[#FFB800] px-4 py-1.5 rounded-full border text-xs font-medium transition-all';
-  const pillInactive = 'bg-zinc-200 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-[#8e8e8e] dark:hover:text-white px-4 py-1.5 rounded-full border text-xs transition-all';
 
   const sortOptions = [
-    { value: 'closest-deadline', label: 'Closest Deadline'  },
-    { value: 'highest-budget',   label: 'Highest Budget'    },
-    { value: 'lowest-budget',    label: 'Lowest Budget'     },
-    { value: 'alpha-asc',        label: 'Alphabetically (A-Z)' },
-    { value: 'alpha-desc',       label: 'Alphabetically (Z-A)' },
+    { value: 'closest-deadline', label: t('closestDeadline') },
+    { value: 'highest-budget',   label: t('highestBudget')   },
+    { value: 'lowest-budget',    label: t('lowestBudget')    },
+    { value: 'alpha-asc',        label: t('alphabeticallyAZ') },
+    { value: 'alpha-desc',       label: t('alphabeticallyZA') },
   ];
 
   const statusBadge: Record<string, string> = {
@@ -227,71 +178,63 @@ export default function CaseFilesIndex() {
     'Cancelled':   'bg-red-500/10 text-red-400 border-red-500/20',
   };
 
-  // ── Form validity gate ──────────────────────────────────────────────────
   const newProjectFormIsValid = newTitle.trim() !== '' && newCategory !== '' && newDeadline !== '';
 
-  // ══════════════════════════════════════════════════════════════════════
-  //  Render
-  // ══════════════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-white dark:bg-[#131313]">
       <Sidebar />
 
       <main className="ml-0 lg:ml-64 h-screen overflow-y-auto bg-white dark:bg-[#131313] p-6 pt-20 sm:p-8 lg:p-12">
 
-
-        {/* ─── Page Header ─────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white">Current Projects</h1>
-              <p className="text-zinc-600 dark:text-[#8e8e8e] text-sm mt-1">
+            <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white" data-i18n="cases.title">
+              {t('cases.title')}
+            </h1>
+            <p className="text-zinc-600 dark:text-[#8e8e8e] text-sm mt-1" data-i18n="cases.subtitle">
               {t('cases.subtitle')}
             </p>
-
           </div>
           <button
             onClick={() => setIsNewProjectOpen(true)}
             className="inline-flex items-center gap-2 bg-[#FFB800] text-neutral-950 font-bold px-5 py-2.5 rounded-xl shadow-md hover:brightness-95 transition-all self-start shrink-0"
+            data-i18n="cases.newBtn"
           >
-            + New Project
+            {t('cases.newBtn')}
           </button>
         </div>
 
-        {/* ─── Filter Chip Row ─────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center gap-6 py-4 border-b border-zinc-200 dark:border-zinc-800 mb-6">
+          <FilterButtonGroup
+            label={`${t('category')}:`}
+            labelI18nKey="category"
+            options={categoryOptions}
+            active={filters.category}
+            onChange={setCategory}
+          />
 
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] mr-1">Category:</span>
-            {categoryPills.map(({ key, label }) => (
-              <button key={key} onClick={() => setCategoryFilter(key)}
-                className={categoryFilter === key ? pillActive : pillInactive}>{label}</button>
-            ))}
-          </div>
+          <FilterButtonGroup
+            label={`${t('duration')}:`}
+            labelI18nKey="duration"
+            options={durationOptions}
+            active={filters.duration}
+            onChange={setDuration}
+          />
 
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] mr-1">Duration:</span>
-            {durationPills.map(({ key, label }) => (
-              <button key={key} onClick={() => setDurationFilter(key)}
-                className={durationFilter === key ? pillActive : pillInactive}>{label}</button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] mr-1">Status:</span>
-            {statusPills.map(({ key, label }) => (
-              <button key={key} onClick={() => setStatusFilter(key)}
-                className={statusFilter === key ? pillActive : pillInactive}>{label}</button>
-            ))}
-          </div>
-
+          <FilterButtonGroup
+            label={`${t('status')}:`}
+            labelI18nKey="status"
+            options={statusOptions}
+            active={filters.status}
+            onChange={setStatus}
+          />
         </div>
 
-        {/* ─── Advanced Sorting Toolbar ─────────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-50 dark:bg-[#1c1b1b] border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl mb-6">
 
           <div className="flex items-center gap-3 min-w-0">
-            <label htmlFor="member-select" className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] shrink-0">
-              Assigned to Member
+            <label htmlFor="member-select" className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] shrink-0" data-i18n="assignedToMember">
+              {t('assignedToMember')}
             </label>
             <select
               id="member-select"
@@ -299,13 +242,13 @@ export default function CaseFilesIndex() {
               onChange={e => setMemberFilter(e.target.value)}
               className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[#FFB800] cursor-pointer min-w-[160px]"
             >
-              <option value="all">All Members</option>
+              <option value="all" data-i18n="allMembers">{t('allMembers')}</option>
               {allMembers.map(name => <option key={name} value={name}>{name}</option>)}
             </select>
           </div>
 
           <div className="flex items-center gap-3 min-w-0">
-            <label htmlFor="sort-select" className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] shrink-0">Sort Order:</label>
+            <label htmlFor="sort-select" className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] shrink-0" data-i18n="sortOrder">{t('sortOrder')}:</label>
             <select
               id="sort-select"
               value={activeSort}
@@ -318,13 +261,11 @@ export default function CaseFilesIndex() {
 
         </div>
 
-        {/* ─── Project List: Expandable Accordion Rows ──────────────────── */}
-        {filteredAndSorted.length === 0 ? (
-            <div className="flex items-center justify-center py-20">
-
+        {isEmpty && filteredAndSorted.length === 0 ? (
+          <div className="flex items-center justify-center py-20">
             <div className="text-center px-6 py-12 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50 dark:bg-[#1c1b1b] max-w-md w-full">
-              <p className="text-zinc-600 dark:text-[#8e8e8e] text-sm leading-relaxed">
-                No projects match your current filter selection. Try adjusting your parameters.
+              <p className="text-zinc-600 dark:text-[#8e8e8e] text-sm leading-relaxed" data-i18n="noProjectsMatch">
+                {t('noProjectsMatch')}
               </p>
             </div>
           </div>
@@ -338,7 +279,6 @@ export default function CaseFilesIndex() {
                 <div key={project.id}
                   className="bg-zinc-50 dark:bg-[#1c1b1b] border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden transition-all duration-200">
 
-                  {/* ── Summary Row ─────────────────────────────────────────── */}
                   <div
                     onClick={() => setExpandedProjectId(isOpen ? null : project.id)}
                     className="p-6 flex items-center justify-between cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-800/30 transition-colors"
@@ -346,7 +286,7 @@ export default function CaseFilesIndex() {
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-bold text-zinc-900 dark:text-white truncate">{project.title}</h3>
                       <p className="text-xs text-zinc-600 dark:text-[#8e8e8e] mt-1">
-                        {project.location} • Manager: {project.manager}
+                        {project.location} {'\u2022'} {t('projectManager')}: {project.manager}
                         <span className={`ml-2 inline-block text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${statusBadge[project.status]}`}>
                           {project.status === 'In Progress'
                             ? t('inProgress')
@@ -360,35 +300,32 @@ export default function CaseFilesIndex() {
                     </div>
 
                     <div className="flex items-center gap-4 shrink-0">
-                      <span className="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-bold border border-emerald-500/20">
+                      <span className="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-bold border border-emerald-500/20" data-i18n="cases.statuses.progress">
                         {t('cases.statuses.progress')} ({project.progress})
-
                       </span>
                       <ChevronDown className={`w-5 h-5 text-zinc-600 dark:text-[#8e8e8e] transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
                     </div>
                   </div>
 
-                  {/* ── Expanded Detail Drawer ─────────────────────────────── */}
                   <div className={`transition-all duration-300 overflow-hidden ${isOpen ? 'max-h-[680px] opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="px-6 pb-6 pt-1 border-t border-zinc-200 dark:border-zinc-800">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-5">
 
-                        {/* ── Left: Admin Overview ─────────────────────────────── */}
                         <div className="space-y-4">
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e]">Administrative Overview</h4>
-                              <p className="text-sm font-semibold text-zinc-900 dark:text-white">{project.title}</p>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e]" data-i18n="administrativeOverview">
+                            {t('administrativeOverview')}
+                          </h4>
+                          <p className="text-sm font-semibold text-zinc-900 dark:text-white">{project.title}</p>
 
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200" data-i18n={project.category?.toLowerCase()}>
+                              {t(project.category?.toLowerCase() || 'renovation')}
+                            </span>
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200" data-i18n={project.duration?.toLowerCase()}>
+                              {t(project.duration?.toLowerCase() || 'long')}
+                            </span>
+                          </div>
 
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
-                                  {t(project.category?.toLowerCase() || 'renovation')}
-                                </span>
-                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
-                                  {t(project.duration?.toLowerCase() || 'long')}
-                                </span>
-                              </div>
-
-                          {/* Manager card */}
                           <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
                             <div className="w-9 h-9 rounded-full bg-[#FFB800]/10 flex items-center justify-center text-xs font-bold text-[#FFB800] flex-shrink-0">
                               {project.manager.split(' ').map(n => n[0]).slice(0,2).join('')}
@@ -397,15 +334,16 @@ export default function CaseFilesIndex() {
                               <p className="text-sm font-semibold text-zinc-900 dark:text-white">{project.manager}</p>
                               <div className="flex gap-2 mt-0.5">
                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">{project.managerRole}</span>
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-600/10 text-blue-400 border border-blue-600/20">Reviewer: {project.reviewer}</span>
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-600/10 text-blue-400 border border-blue-600/20" data-i18n="reviewer">
+                                  {t('reviewer')}: {project.reviewer}
+                                </span>
                               </div>
                             </div>
                           </div>
 
-                          {/* ── Assign to Team Member selector ─────────────────── */}
                           <div>
-                            <label className="text-xs font-bold uppercase text-zinc-600 dark:text-[#8e8e8e] mb-1.5 block">
-                              Assign to Team Member:
+                            <label className="text-xs font-bold uppercase text-zinc-600 dark:text-[#8e8e8e] mb-1.5 block" data-i18n="assignToTeamMember">
+                              {t('assignToTeamMember')}
                             </label>
                             <select
                               value={project.manager}
@@ -418,45 +356,45 @@ export default function CaseFilesIndex() {
                             </select>
                           </div>
 
-                          {/* ── Fast-action buttons ────────────────────────────── */}
                           <div className="flex flex-wrap gap-2">
-                            <button className="border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-xs px-3 py-1.5 rounded-lg text-zinc-800 dark:text-zinc-200 hover:text-white transition-all flex items-center">
-                              <Pencil   className="w-3.5 h-3.5 mr-1.5" /><span>Edit</span>
+                            <button className="border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-xs px-3 py-1.5 rounded-lg text-zinc-800 dark:text-zinc-200 hover:text-white transition-all flex items-center" data-i18n="edit">
+                              <Pencil className="w-3.5 h-3.5 mr-1.5" /><span>Edit</span>
                             </button>
-                            <button className="bg-[#B71C1C] text-[#212121] dark:text-[#FFEBEE] hover:opacity-90 transition-colors duration-200 border border-zinc-300 dark:border-zinc-700 text-xs px-3 py-1.5 rounded-lg flex items-center">
-                              <Trash2   className="w-3.5 h-3.5 mr-1.5" /><span>Cancel</span>
+                            <button className="bg-[#B71C1C] text-[#212121] dark:text-[#FFEBEE] hover:opacity-90 transition-colors duration-200 border border-zinc-300 dark:border-zinc-700 text-xs px-3 py-1.5 rounded-lg flex items-center" data-i18n="cancelProjectAction">
+                              <Trash2 className="w-3.5 h-3.5 mr-1.5" /><span>{t('cancelProjectAction')}</span>
                             </button>
-                            <button className="border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-xs px-3 py-1.5 rounded-lg text-zinc-600 dark:text-[#8e8e8e] hover:text-white transition-all flex items-center">
-                              <Archive  className="w-3.5 h-3.5 mr-1.5" /><span>Archive</span>
+                            <button className="border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-xs px-3 py-1.5 rounded-lg text-zinc-600 dark:text-[#8e8e8e] hover:text-white transition-all flex items-center" data-i18n="archive">
+                              <Archive className="w-3.5 h-3.5 mr-1.5" /><span>{t('archive')}</span>
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); window.open(`/api/report?projectId=${project.id}`, '_blank'); }}
                               className="border border-[#FFB800]/40 bg-[#FFB800]/10 text-xs px-3.5 py-1.5 rounded-lg text-[#FFB800] hover:bg-[#FFB800] hover:text-neutral-950 font-semibold transition-all duration-200 flex items-center"
+                              data-i18n="overview"
                             >
-                              <FileText className="w-3.5 h-3.5 mr-1.5" /><span>Overview</span>
+                              <FileText className="w-3.5 h-3.5 mr-1.5" /><span>{t('overview')}</span>
                             </button>
                           </div>
                         </div>
 
-                        {/* ── Right: Financial Progress Tracks ─────────────────── */}
                         <div className="space-y-4">
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e]">{t('financialProgress')}</h4>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e]" data-i18n="financialProgress">
+                            {t('financialProgress')}
+                          </h4>
 
                           <div className="grid grid-cols-2 gap-3">
                             <div className="p-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] mb-1">Budget</p>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] mb-1" data-i18n="financialProgressBudget">{t('financialProgressBudget')}</p>
                               <p className="text-sm font-bold text-zinc-900 dark:text-white">{currency(project.budget)}</p>
                             </div>
                             <div className="p-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] mb-1">Expenses</p>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] mb-1" data-i18n="financialProgressExpenses">{t('financialProgressExpenses')}</p>
                               <p className="text-sm font-bold text-amber-400">{currency(project.expenses)}</p>
                             </div>
                           </div>
 
-                          {/* utilisation bar */}
                           <div>
                             <div className="flex items-center justify-between mb-1.5">
-                              <p className="text-[11px] font-medium text-zinc-600 dark:text-[#8e8e8e]">{t('budgetUtilization')}</p>
+                              <p className="text-[11px] font-medium text-zinc-600 dark:text-[#8e8e8e]" data-i18n="budgetUtilization">{t('budgetUtilization')}</p>
                               <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200">{utilPct.toFixed(1)}%</p>
                             </div>
                             <div className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
@@ -468,13 +406,13 @@ export default function CaseFilesIndex() {
 
                       </div>
 
-                      {/* ── Bottom Collapse Row Link ─────────────────────────── */}
                       <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                         <button
                           onClick={() => setExpandedProjectId(null)}
                           className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                          data-i18n="retractDetails"
                         >
-                          <ChevronUp className="w-3.5 h-3.5" />Retract details
+                          <ChevronUp className="w-3.5 h-3.5" />{t('retractDetails')}
                         </button>
                       </div>
 
@@ -489,9 +427,6 @@ export default function CaseFilesIndex() {
 
       </main>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          NEW PROJECT CREATION MODAL
-      ══════════════════════════════════════════════════════════════════════ */}
       {isNewProjectOpen && (
         <>
           <div onClick={() => setIsNewProjectOpen(false)}
@@ -500,22 +435,19 @@ export default function CaseFilesIndex() {
           <div className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
             <div className="relative w-full max-w-xl bg-zinc-50 dark:bg-[#1c1b1b] border border-zinc-200 dark:border-zinc-800 rounded-2xl flex flex-col max-h-[90vh] pointer-events-auto shadow-2xl shadow-black">
 
-              {/* ── Modal Header ──────────────────────────────────────── */}
               <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">New Project</h2>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-white" data-i18n="newProjectTitle">{t('newProjectTitle')}</h2>
                 <button onClick={() => setIsNewProjectOpen(false)}
                   className="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-800/40 rounded-lg transition">
-                  <span className="text-zinc-600 dark:text-[#8e8e8e] dark:hover:text-white text-lg leading-none">✕</span>
+                  <span className="text-zinc-600 dark:text-[#8e8e8e] dark:hover:text-white text-lg leading-none">{'\u2715'}</span>
                 </button>
               </div>
 
-              {/* ── Scrollable Form Body ───────────────────────────────── */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-                {/* Field 1: Project Title */}
                 <div>
-                  <label className="text-[11px] font-bold tracking-widest text-zinc-600 dark:text-[#8e8e8e] mb-2 block">
-                    Project Title
+                  <label className="text-[11px] font-bold tracking-widest text-zinc-600 dark:text-[#8e8e8e] mb-2 block" data-i18n="projectTitle">
+                    {t('projectTitle')}
                   </label>
                   <input
                     type="text"
@@ -526,17 +458,16 @@ export default function CaseFilesIndex() {
                   />
                 </div>
 
-                {/* Field 2: Multi-level Category Dropdown */}
                 <div>
-                  <label className="text-[11px] font-bold tracking-widest text-zinc-600 dark:text-[#8e8e8e] mb-2 block">
-                    Project Category
+                  <label className="text-[11px] font-bold tracking-widest text-zinc-600 dark:text-[#8e8e8e] mb-2 block" data-i18n="projectCategory">
+                    {t('projectCategory')}
                   </label>
                   <select
                     value={newCategory}
                     onChange={e => setNewCategory(e.target.value)}
                     className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-[#FFB800] focus:ring-1 focus:ring-[#FFB800] transition-all appearance-none cursor-pointer"
                   >
-                    <option value="">— Select a category —</option>
+                    <option value="" data-i18n="selectCategory">{t('selectCategory')}</option>
                     {categoryGroups.map(group => (
                       <optgroup key={group.label} label={group.label}>
                         {group.options.map(opt => (
@@ -547,10 +478,9 @@ export default function CaseFilesIndex() {
                   </select>
                 </div>
 
-                {/* Field 3: Date Picker */}
                 <div>
-                  <label className="text-[11px] font-bold tracking-widest text-zinc-600 dark:text-[#8e8e8e] mb-2 block">
-                    Set Project Deadline
+                  <label className="text-[11px] font-bold tracking-widest text-zinc-600 dark:text-[#8e8e8e] mb-2 block" data-i18n="projectDeadline">
+                    {t('projectDeadline')}
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 dark:text-[#8e8e8e] pointer-events-none" />
@@ -570,13 +500,12 @@ export default function CaseFilesIndex() {
 
               </div>
 
-              {/* ── Fixed Footer ───────────────────────────────────────── */}
               <div className="px-4 pt-4 pb-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#1c1b1b] flex items-center justify-end gap-3 rounded-b-2xl shrink-0">
                 <button
                   onClick={() => setIsNewProjectOpen(false)}
                   className="flex items-center gap-1.5 bg-[#B71C1C] text-[#212121] dark:text-[#FFEBEE] hover:opacity-90 transition-colors duration-200 border border-zinc-300 dark:border-zinc-700 px-5 py-2.5 rounded-xl text-sm font-semibold shrink-0"
                 >
-                  <span>✕</span> Cancel Project
+                  <span>{'\u2715'}</span> {t('cancelProjectAction')}
                 </button>
                 <button
                   onClick={handleCreateProject}
@@ -586,8 +515,9 @@ export default function CaseFilesIndex() {
                       ? 'bg-[#FFB800] text-neutral-950 hover:bg-[#E5A600] active:scale-[0.98] cursor-pointer'
                       : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-[#8e8e8e] cursor-not-allowed'
                   }`}
+                  data-i18n="createProject"
                 >
-                  Create Project
+                  {t('createProject')}
                 </button>
               </div>
 

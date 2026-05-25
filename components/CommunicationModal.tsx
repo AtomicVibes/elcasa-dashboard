@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { X, Send, Mic, Square, Play, Trash2, MessageSquare, Check, Loader2 } from 'lucide-react';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabase } from '@/app/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
 type Tab = 'text' | 'audio';
@@ -157,7 +157,7 @@ export default function CommunicationModal({
           setSending(false);
           return;
         }
-        const { error: insertError } = await supabase.from('messages').insert({
+        const { error: insertError } = await getSupabase().from('messages').insert({
           sender_id: user.id,
           recipient_id: recipientId ?? null,
           recipient_name: recipientName,
@@ -173,14 +173,14 @@ export default function CommunicationModal({
           return;
         }
         const fileName = `audio/${user.id}/${Date.now()}.webm`;
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await getSupabase().storage
           .from('audio-messages')
           .upload(fileName, recordedBlob, { contentType: 'audio/webm' });
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage.from('audio-messages').getPublicUrl(fileName);
+        const { data: urlData } = getSupabase().storage.from('audio-messages').getPublicUrl(fileName);
 
-        const { error: insertError } = await supabase.from('messages').insert({
+        const { error: insertError } = await getSupabase().from('messages').insert({
           sender_id: user.id,
           recipient_id: recipientId ?? null,
           recipient_name: recipientName,

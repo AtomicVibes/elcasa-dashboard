@@ -2,8 +2,8 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
-import { supabase } from '@/app/lib/supabase'; 
 import { useLanguage } from '@/context/LanguageContext';
+import { getSupabase } from '@/app/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface FullRequest {
@@ -32,7 +32,7 @@ export default function RequestDetailView({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     async function loadItem() {
-      const { data: item } = await supabase
+      const { data: item } = await getSupabase()
         .from('renovation_requests')
         .select('*')
         .eq('id', id)
@@ -46,7 +46,7 @@ export default function RequestDetailView({ params }: { params: Promise<{ id: st
   const handleApproveToCase = async () => {
     setActionLoading(true);
     // Simulating approval status mutation cascade
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('renovation_requests')
       .update({ status: 'Approved' })
       .eq('id', id);

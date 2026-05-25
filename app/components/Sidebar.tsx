@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, FolderOpen, Image, Clock, Users, Briefcase, Settings, LogOut, Menu, X, ChevronLeft, ChevronRight, CheckSquare2, CalendarClock } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabase } from '@/app/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -40,7 +40,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (user?.id) {
-      supabase
+      getSupabase()
         .from('profiles')
         .select('full_name')
         .eq('id', user.id)

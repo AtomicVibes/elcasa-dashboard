@@ -1,20 +1,16 @@
 import { NextResponse } from 'next/server';
-import { LeaveRequest } from '@/app/lib/models';
+import { getModels } from '@/app/lib/models';
 import { serializeLeave } from '@/app/lib/types';
 import type { LeaveRequestDTO } from '@/app/lib/types';
 
 export const runtime = 'nodejs';
 
-if (!(LeaveRequest as any).sequelize) {
-  (LeaveRequest as any).sequelize = (require('@/app/lib/models') as any).sequelize;
-}
-
-// ─── GET /api/leave-requests/[id] ────────────────────────────────────────────
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { LeaveRequest } = await getModels();
     const { id } = await params;
     const row     = await (LeaveRequest as any).findByPk(Number(id));
     if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -25,13 +21,12 @@ export async function GET(
   }
 }
 
-// ─── PATCH /api/leave-requests/[id] ──────────────────────────────────────────
-// Used to approve/deny a leave request by a manager
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { LeaveRequest } = await getModels();
     const { id } = await params;
     const body    = await request.json();
 
@@ -65,12 +60,12 @@ export async function PATCH(
   }
 }
 
-// ─── DELETE /api/leave-requests/[id] ─────────────────────────────────────────
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { LeaveRequest } = await getModels();
     const { id } = await params;
     const count   = await LeaveRequest.destroy({ where: { id: Number(id) } });
     if (!count) return NextResponse.json({ error: 'Not found' }, { status: 404 });

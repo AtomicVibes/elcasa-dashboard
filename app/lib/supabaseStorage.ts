@@ -1,13 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-import path from 'path';
-import { randomUUID } from 'crypto';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-const STORAGE_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ?? 'project-images';
+import { getSupabase } from './supabase';
 
 /** Upload a Buffer/File to Supabase Storage and return the public URL */
 export async function uploadToSupabase(
@@ -16,11 +7,15 @@ export async function uploadToSupabase(
   mimeType: string,
   pathPrefix: string = 'projects'
 ): Promise<string> {
+  const { randomUUID } = await import('crypto');
+  const supabase = getSupabase();
+  const storageBucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ?? 'project-images';
+
   const ext         = filename.slice(filename.lastIndexOf('.'));
   const uniqueName   = `${pathPrefix}/${randomUUID()}${ext}`;
 
   const { data, error } = await supabase.storage
-    .from(STORAGE_BUCKET)
+    .from(storageBucket)
     .upload(uniqueName, buffer, {
       contentType:       mimeType,
       cacheControl:      '3600',
@@ -32,7 +27,7 @@ export async function uploadToSupabase(
   }
 
   const { data: publicUrlData } = supabase.storage
-    .from(STORAGE_BUCKET)
+    .from(storageBucket)
     .getPublicUrl(data.path);
 
   return publicUrlData.publicUrl;

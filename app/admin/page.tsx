@@ -6,7 +6,7 @@ import Sidebar from '@/app/components/Sidebar';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 
-import { supabase } from '@/app/lib/supabase';
+import { getSupabase } from '@/app/lib/supabase';
 import LanguageToggleDropdown from '@/components/LanguageToggle';
 
 
@@ -29,7 +29,7 @@ const { language } = useLanguage();
 
   useEffect(() => {
     if (user?.id) {
-      supabase
+      getSupabase()
         .from('profiles')
         .select('full_name')
         .eq('id', user.id)
@@ -49,7 +49,7 @@ const { language } = useLanguage();
 
   useEffect(() => {
     async function getStats() {
-      const { count } = await supabase
+      const { count } = await getSupabase()
         .from('renovation_requests')
         .select('*', { count: 'exact', head: true });
       setTotalRequests(count || 0);

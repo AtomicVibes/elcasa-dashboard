@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server';
-import { User, Job, LeaveRequest } from '@/app/lib/models';
+import { getModels } from '@/app/lib/models';
 import { serializeLeave } from '@/app/lib/types';
 import type { LeaveRequestDTO } from '@/app/lib/types';
 
 export const runtime = 'nodejs';
 
-if (!(LeaveRequest as any).sequelize) {
-  const m = require('@/app/lib/models') as typeof import('@/app/lib/models');
-  [User, Job, LeaveRequest].forEach(M => (M as any).sequelize = m.sequelize);
-}
-
-// ─── GET /api/leave-requests ─────────────────────────────────────────────────
 export async function GET(request: Request) {
   try {
+    const { LeaveRequest, User, Job } = await getModels();
     const url    = new URL(request.url);
     const userId = url.searchParams.get('userId');
     const status = url.searchParams.get('status');
@@ -45,9 +40,9 @@ export async function GET(request: Request) {
   }
 }
 
-// ─── POST /api/leave-requests ─────────────────────────────────────────────────
 export async function POST(request: Request) {
   try {
+    const { LeaveRequest } = await getModels();
     const body = await request.json();
     const { userId, jobId, type, startDate, endDate, reason } = body;
 
