@@ -1,23 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
   "name": "arcadia",
   "compatibility_date": "2026-05-25",
-  "compatibility_flags": [
-    "nodejs_compat",
-    "global_fetch_strictly_public"
-  ],
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
-  },
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "arcadia"
-    }
-  ],
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
+  },
+
+  // ✅ OpenNext Worker entry point
+  "main": ".open-next/worker.js",
+
+  // ✅ OpenNext assets output
+  "assets": {
+    "directory": ".open-next/assets"
   }
 }
