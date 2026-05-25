@@ -1,19 +1,27 @@
 import { NextResponse } from 'next/server';
-import { getModels } from '@/app/lib/models';
+import { getSupabase } from '@/app/lib/supabase';
 import { serializeLeave } from '@/app/lib/types';
 import type { LeaveRequestDTO } from '@/app/lib/types';
-
-export const runtime = 'nodejs';
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { LeaveRequest } = await getModels();
+    const supabase = getSupabase();
     const { id } = await params;
-    const row     = await (LeaveRequest as any).findByPk(Number(id));
-    if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    const { data: row, error } = await supabase
+      .from('leave_requests')
+      .select('*')
+      .eq('id', Number(id))
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      throw error;
+    }
+
     return NextResponse.json<LeaveRequestDTO>(serializeLeave(row));
   } catch (err) {
     console.error('[GET /api/leave-requests/:id]', err);
@@ -26,7 +34,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { LeaveRequest } = await getModels();
+    const supabase = getSupabase();
     const { id } = await params;
     const body    = await request.json();
 
@@ -47,11 +55,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    const [updated] = await LeaveRequest.update(updates, {
-      where: { id: Number(id) },
-      returning: true,
-    } as any);
-    if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    const { data: updated, error } = await supabase
+      .from('leave_requests')
+      .update(updates)
+      .eq('id', Number(id))
+      .select('*')
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      throw error;
+    }
 
     return NextResponse.json<LeaveRequestDTO>(serializeLeave(updated));
   } catch (err) {
@@ -65,10 +79,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { LeaveRequest } = await getModels();
+    const supabase = getSupabase();
     const { id } = await params;
-    const count   = await LeaveRequest.destroy({ where: { id: Number(id) } });
-    if (!count) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    const { error, count } = await supabase
+      .from('leave_requests')
+      .delete({ count: 'exact' })
+      .eq('id', Number(id));
+
+    if (error) throw error;
+    if (count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ deleted: true });
   } catch (err) {
     console.error('[DELETE /api/leave-requests/:id]', err);

@@ -1,27 +1,32 @@
 import { NextResponse } from 'next/server';
-import { getModels } from '@/app/lib/models';
+import { getSupabase } from '@/app/lib/supabase';
 import { serializeJob } from '@/app/lib/types';
 import type { JobDTO } from '@/app/lib/types';
 
-export const runtime = 'nodejs';
+async function getJobWithAssignees(jobId: number): Promise<any | null> {
+  const supabase = getSupabase();
 
-async function getJobWithAssignees(jobId: number): Promise<any & { assignees?: any[] }> {
-  const { Job, Customer, JobAssignee } = await getModels();
-  const job = await Job.findByPk(jobId, {
-    include: [{
-      model: Customer,
-      as: 'customer',
-      attributes: ['id', 'full_name', 'email'],
-    }],
-  });
-  if (!job) return null;
+  const { data: job, error } = await supabase
+    .from('jobs')
+    .select(`
+      *,
+      customer:customer_id (
+        id, full_name, email
+      ),
+      assignees:job_assignees (
+        id,
+        user_id,
+        role_on_job,
+        user:user_id (
+          id, full_name, email
+        )
+      )
+    `)
+    .eq('id', jobId)
+    .single();
 
-  const { User } = await getModels();
-  const assignees = await JobAssignee.findAll({
-    where: { job_id: jobId },
-    include: [{ model: User, as: 'user', attributes: ['id','full_name','email'] }],
-  });
-  return { ...job.toJSON(), assignees };
+  if (error || !job) return null;
+  return job;
 }
 
 export async function GET(
@@ -30,7 +35,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const data    = await getJobWithAssignees(Number(id));
+    const data   = await getJobWithAssignees(Number(id));
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json<JobDTO>(serializeJob(data) as JobDTO);
   } catch (err) {
@@ -44,7 +49,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { Job } = await getModels();
+    const supabase = getSupabase();
     const { id } = await params;
     const body    = await request.json();
 
@@ -60,13 +65,18 @@ export async function PATCH(
       return NextResponse.json({ error: 'No valid update fields' }, { status: 400 });
     }
 
-    const [updated] = await Job.update(updates, {
-      where: { id: Number(id) },
-      returning: true,
-    } as any);
-    if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    const { error } = await supabase
+      .from('jobs')
+      .update(updates)
+      .eq('id', Number(id));
+
+    if (error) {
+      if (error.code === 'PGRST116') return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      throw error;
+    }
 
     const data = await getJobWithAssignees(Number(id));
+    if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json<JobDTO>(serializeJob(data) as JobDTO);
   } catch (err) {
     console.error('[PATCH /api/jobs/:id]', err);
@@ -79,10 +89,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { Job } = await getModels();
+    const supabase = getSupabase();
     const { id } = await params;
-    const count   = await Job.destroy({ where: { id: Number(id) } });
-    if (!count) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    const { error, count } = await supabase
+      .from('jobs')
+      .delete({ count: 'exact' })
+      .eq('id', Number(id));
+
+    if (error) throw error;
+    if (count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ deleted: true });
   } catch (err) {
     console.error('[DELETE /api/jobs/:id]', err);

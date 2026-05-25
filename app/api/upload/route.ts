@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSupabase } from '@/app/lib/supabase';
 import { uploadToSupabase } from '@/app/lib/supabaseStorage';
-
-export const runtime = 'nodejs';
 
 // ─── POST /api/upload ────────────────────────────────────────────────────────
 // AuthGate → Supabase Upload wrapper
@@ -13,14 +12,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized — valid auth token required in Authorization header' }, { status: 401 });
     }
     const token = auth.slice('Bearer '.length);
-    // JWT matters — legacy auth token sent by Upload component + API
-    const secret = process.env.JWT_SECRET;
-    if (!secret || !token) {
-      return NextResponse.json({ error: 'JWT_SECRET not configured' }, { status: 500 });
-    }
-    try {
-      require('jsonwebtoken').verify(token, secret);
-    } catch {
+
+    // Use Supabase Auth to verify the JWT (Cloudflare-compatible)
+    const { data: { user }, error: authError } = await getSupabase().auth.getUser(token);
+    if (authError || !user) {
       return NextResponse.json({ error: 'Invalid auth token — you must be signed in to load this page' }, { status: 403 });
     }
 

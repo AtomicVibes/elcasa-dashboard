@@ -1,32 +1,39 @@
 import { NextResponse } from 'next/server';
-import { getModels } from '@/app/lib/models';
+import { getSupabase } from '@/app/lib/supabase';
 import { serializeLeave } from '@/app/lib/types';
 import type { LeaveRequestDTO } from '@/app/lib/types';
 
-export const runtime = 'nodejs';
-
 export async function GET(request: Request) {
   try {
-    const { LeaveRequest, User, Job } = await getModels();
+    const supabase = getSupabase();
     const url    = new URL(request.url);
     const userId = url.searchParams.get('userId');
     const status = url.searchParams.get('status');
 
-    const where: Record<string, any> = {};
-    if (userId) where.user_id   = Number(userId);
-    if (status) where.status    = status;
+    let query = supabase
+      .from('leave_requests')
+      .select(`
+        *,
+        user:user_id (
+          id, full_name, email
+        ),
+        job:job_id (
+          id, title
+        ),
+        reviewer:reviewed_by (
+          id, full_name, email
+        )
+      `)
+      .order('start_date', { ascending: false });
 
-    const rows = await (LeaveRequest as any).findAll({
-      where: Object.keys(where).length ? where : undefined,
-      include: [
-        { model: User,  as: 'user',   attributes: ['id', 'full_name', 'email'] },
-        { model: Job,   as: 'job',    attributes: ['id', 'title'] },
-        { model: User,  as: 'reviewer', attributes: ['id', 'full_name', 'email'] },
-      ],
-      order: [['start_date', 'DESC']],
-    });
+    if (userId) query = query.eq('user_id', Number(userId));
+    if (status) query = query.eq('status', status);
 
-    const payload = (rows as any[]).map((r) => ({
+    const { data: rows, error } = await query;
+
+    if (error) throw error;
+
+    const payload = ((rows as any[]) || []).map((r: any) => ({
       ...serializeLeave(r),
       user:    r.user    ? { id: r.user.id,    name: r.user.full_name,  email: r.user.email }    : null,
       job:     r.job     ? { id: r.job.id,     title: r.job.title }                             : null,
@@ -42,7 +49,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { LeaveRequest } = await getModels();
+    const supabase = getSupabase();
     const body = await request.json();
     const { userId, jobId, type, startDate, endDate, reason } = body;
 
@@ -53,16 +60,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'startDate must be before endDate' }, { status: 400 });
     }
 
-    const created = await LeaveRequest.create({
-      userId: Number(userId),
-      jobId:  jobId  ? Number(jobId)  : null,
-      type:   type   ?? 'personal',
-      start_date: startDate,
-      end_date:   endDate,
-      reason:  reason ?? null,
-      status:  'pending',
-    });
+    const { data: created, error } = await supabase
+      .from('leave_requests')
+      .insert({
+        user_id: Number(userId),
+        job_id:  jobId  ? Number(jobId)  : null,
+        type:    type   ?? 'personal',
+        start_date: startDate,
+        end_date:   endDate,
+        reason:     reason ?? null,
+        status:     'pending',
+      })
+      .select('*')
+      .single();
 
+    if (error) throw error;
     return NextResponse.json(serializeLeave(created), { status: 201 });
   } catch (err) {
     console.error('[POST /api/leave-requests]', err);
