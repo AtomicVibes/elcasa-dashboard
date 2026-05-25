@@ -1,0 +1,71 @@
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+body {
+  background-color: #f4f4f5;
+  color: #18181b;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.dark body {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+/* Custom slick dark scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #e4e4e7;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #121212;
+}
+::-webkit-scrollbar-thumb {
+  background: #c4c4c7;
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #262626;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a4a4a7;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #404040;
+}
+
+/* Global dropdown highlight standard (native <select>) */
+select:focus {
+  outline: none;
+  border-color: #FFC107 !important;
+  box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.35) !important;
+}
+
+select {
+  /* keeps scroll thumb / accent aligned but does not override the option list */
+  accent-color: #FFC107;
+}
+
+/* Let the browser render the option list background.
+   Override only color for selected/active option rows so the highlight is yellow + readable.
+   (Native select styling is limited and may vary by OS/browser.) */
+option:checked {
+  background: #FFC107;
+  color: #000000;
+}
+
+
+
