@@ -155,7 +155,7 @@ export default function AuthPage() {
     setSubmitting(true);
     try {
       await signIn({ email: email.trim(), password });
-      router.push("/admin");
+      router.push("/dashboard");
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -181,7 +181,7 @@ export default function AuthPage() {
         phoneNumber: phoneNumber.trim(),
         password,
       });
-      router.push("/admin");
+      router.push("/dashboard");
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {

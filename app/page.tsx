@@ -7,7 +7,7 @@ export default function RootIndexRedirect() {
 
   useEffect(() => {
     // Forward root landing page hit indices straight into our layout dashboard engine path
-    router.push('/admin');
+    router.push('/dashboard');
   }, [router]);
 
   return (

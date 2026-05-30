@@ -38,5 +38,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${requestUrl.origin}/admin`);
+  return NextResponse.redirect(`${requestUrl.origin}/dashboard`);
 }

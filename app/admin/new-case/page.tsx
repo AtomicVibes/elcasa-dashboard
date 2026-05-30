@@ -112,7 +112,7 @@ export default function NewCaseCreationForm() {
           <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 mt-8">
             <button
               type="button"
-              onClick={() => router.push('/admin')}
+              onClick={() => router.push('/dashboard')}
               className="px-6 py-3 rounded-xl border border-neutral-700 bg-[#B71C1C] text-[#212121] dark:text-[#FFEBEE] hover:opacity-90 transition-colors duration-200 text-sm font-semibold"
             >
               {lang === 'EN' ? 'Cancel' : 'Annulla'}
