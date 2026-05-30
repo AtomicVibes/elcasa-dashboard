@@ -26,6 +26,15 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKey,
   },
+
+  async rewrites() {
+    return [
+      {
+        source: "/dashboard",
+        destination: "/admin",
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

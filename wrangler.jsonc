@@ -13,5 +13,10 @@
   // ✅ OpenNext assets output
   "assets": {
     "directory": ".open-next/assets"
-  }
+  },
+
+  // Prevents Wrangler's esbuild from injecting __name helper,
+  // which causes "Uncaught ReferenceError: __name is not defined"
+  // when Next.js libraries serialize/deserialize function strings.
+  "keep_names": false
 }
