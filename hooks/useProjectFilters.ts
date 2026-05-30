@@ -24,25 +24,6 @@ export interface ProjectFilterState {
   status: string;
 }
 
-const categoryLabelMap: Record<string, string> = {
-  construction: 'Construction',
-  renovation: 'Renovation',
-  architecture: 'Architecture',
-  design: 'Design',
-};
-
-const durationLabelMap: Record<string, string> = {
-  short: 'Short Duration',
-  long: 'Long Duration',
-};
-
-const statusLabelMap: Record<string, string> = {
-  'in-progress': 'In Progress',
-  pending: 'Pending',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
-
 export function useProjectFilters(projects: Project[]) {
   const [filters, setFilters] = useState<ProjectFilterState>({
     category: 'all',
@@ -61,22 +42,13 @@ export function useProjectFilters(projects: Project[]) {
 
   const activeProjects = useMemo(() => {
     return projects.filter((project) => {
-      if (
-        filters.category !== 'all' &&
-        project.category !== categoryLabelMap[filters.category]
-      ) {
+      if (filters.category !== 'all' && project.category !== filters.category) {
         return false;
       }
-      if (
-        filters.duration !== 'all' &&
-        project.duration !== durationLabelMap[filters.duration]
-      ) {
+      if (filters.duration !== 'all' && project.duration !== filters.duration) {
         return false;
       }
-      if (
-        filters.status !== 'all' &&
-        project.status !== statusLabelMap[filters.status]
-      ) {
+      if (filters.status !== 'all' && project.status !== filters.status) {
         return false;
       }
       return true;

@@ -6,6 +6,32 @@
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-forge-black: var(--forge-black);
+  --color-accent: #FFB800;
+  --color-accent-foreground: #000000;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #18181b;
+  --card: #f4f4f5;
+  --card-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --forge-black: #131313;
+}
+
+.dark {
+  --background: #131313;
+  --foreground: #ffffff;
+  --card: #1c1b1b;
+  --card-foreground: #e4e4e7;
+  --muted: #1c1b1b;
+  --muted-foreground: #8e8e8e;
 }
 
 body {

@@ -183,6 +183,7 @@ export const translations: Record<string, Record<string, string>> = {
     'common.loading': 'Loading...',
 
     'cases.title': 'Current Projects',
+    'cases.total': 'Total Projects',
     'cases.subtitle': 'Operational blueprints currently under construction',
     'cases.newBtn': '+ New Project',
     'cases.tableHead.manager': 'Project Manager',
@@ -442,6 +443,7 @@ export const translations: Record<string, Record<string, string>> = {
     'common.loading': 'Caricamento...',
 
     'cases.title': 'Progetti Correnti',
+    'cases.total': 'Progetti Totali',
     'cases.subtitle': 'Progetti operativi attualmente in fase di costruzione',
     'cases.newBtn': '+ Nuovo Progetto',
     'cases.tableHead.manager': 'Project Manager',
@@ -690,6 +692,7 @@ export const translations: Record<string, Record<string, string>> = {
     'common.loading': 'Chargement...',
 
     'cases.title': 'Projets en Cours',
+    'cases.total': 'Projets Totaux',
     'cases.subtitle': 'Plans opérationnels actuellement en construction',
     'cases.newBtn': '+ Nouveau Projet',
     'cases.tableHead.manager': 'Chef de Projet',

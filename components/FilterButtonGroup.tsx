@@ -22,11 +22,8 @@ export function FilterButtonGroup({
   onChange,
 }: FilterButtonGroupProps) {
   return (
-    <div className="flex items-center gap-2.5 flex-wrap">
-      <span
-        className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-[#8e8e8e] mr-1"
-        data-i18n={labelI18nKey}
-      >
+    <div className="flex items-center gap-2.5 flex-wrap" data-i18n={labelI18nKey}>
+      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground mr-1">
         {label}
       </span>
       {options.map(({ key, label, i18nKey }) => (
@@ -37,8 +34,8 @@ export function FilterButtonGroup({
           data-i18n={i18nKey}
           className={
             active === key
-              ? 'bg-[#FFB800]/10 border-[#FFB800] text-[#FFB800] px-4 py-1.5 rounded-full border text-xs font-medium transition-all'
-              : 'bg-zinc-200 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-[#8e8e8e] dark:hover:text-white px-4 py-1.5 rounded-full border text-xs transition-all'
+              ? 'bg-accent/10 border-accent text-accent px-4 py-1.5 rounded-full border text-xs font-medium transition-all'
+              : 'bg-zinc-200 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 dark:hover:text-white px-4 py-1.5 rounded-full border text-xs transition-all'
           }
         >
           {label}
