@@ -89,7 +89,7 @@ export default function Sidebar() {
       }`}>
       <div>
         <div className={`flex items-center gap-3 mb-8 transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-2'}`}>
-          <img src="/assets/MAINLOGO.png" alt="Arcadia logo" className={MAIN_LOGO_CLASS} />
+          <img src="/logo.png" alt="Arcadia logo" className={MAIN_LOGO_CLASS} />
           {!isCollapsed && <span className="text-xl font-black tracking-tight text-zinc-900 dark:text-white">Arcadia</span>}
         </div>
 

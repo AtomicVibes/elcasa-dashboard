@@ -222,7 +222,7 @@ export default function AuthPage() {
       )}>
         <div className="flex flex-col items-center mb-8">
           <Image
-            src="/assets/MAINLOGO.png"
+            src="/logo.png"
             alt="Arcadia Logo"
             width={180}
             height={48}

@@ -7,9 +7,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 
 import { getSupabase } from '@/app/lib/supabase';
-import LanguageToggleDropdown from '@/components/LanguageToggle';
-
-
 
 import { RequireAuth } from "@/app/components/RequireAuth";
 
@@ -80,10 +77,6 @@ const { language } = useLanguage();
           </div>
           
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative inline-block text-left">
-              <LanguageToggleDropdown />
-
-            </div>
             <Link 
               href="/admin/new-case" 
               className="flex-1 sm:flex-initial bg-[#FFB800] text-neutral-950 text-xs font-bold px-5 py-3 rounded-xl hover:bg-[#E5A500] transition-all shadow-lg shadow-[#FFB800]/10 hover:shadow-[#FFB800]/20 active:scale-95 text-center flex items-center justify-center gap-1.5"

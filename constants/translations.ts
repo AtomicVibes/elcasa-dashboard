@@ -200,6 +200,9 @@ export const translations: Record<string, Record<string, string>> = {
     'cases.statuses.pending': 'Pending',
     'cases.statuses.completed': 'Completed',
     'cases.statuses.cancelled': 'Cancelled',
+    'cases.badgeActive': 'Active',
+    'cases.badgeDelivered': 'Delivered',
+    'cases.badgeAwaiting': 'Awaiting',
 
     // Keep team/customers keys
     'team.title': 'Team Management',
@@ -460,6 +463,9 @@ export const translations: Record<string, Record<string, string>> = {
     'cases.statuses.pending': 'In Attesa',
     'cases.statuses.completed': 'Completato',
     'cases.statuses.cancelled': 'Annullato',
+    'cases.badgeActive': 'Attivo',
+    'cases.badgeDelivered': 'Consegnato',
+    'cases.badgeAwaiting': 'In attesa',
 
     'team.title': 'Gestione del Team',
     'team.subtitle': 'Gestisci i membri del team e i permessi di sistema',
@@ -709,6 +715,9 @@ export const translations: Record<string, Record<string, string>> = {
     'cases.statuses.pending': 'En Attente',
     'cases.statuses.completed': 'Terminé',
     'cases.statuses.cancelled': 'Annulé',
+    'cases.badgeActive': 'Actif',
+    'cases.badgeDelivered': 'Livré',
+    'cases.badgeAwaiting': 'En attente',
 
     'team.title': 'Gestion d\'Équipe',
     'team.subtitle': 'Gérez les membres de l\'équipe et les permissions système',
