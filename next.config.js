@@ -26,6 +26,16 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKey,
   },
+
+  async redirects() {
+    return [
+      {
+        source: "/dashboard",
+        destination: "/admin",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
