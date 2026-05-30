@@ -34,8 +34,6 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@ast-grep/napi": "^0.40.5",
-    "@ast-grep/napi-linux-x64-gnu": "^0.40.5",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
@@ -50,6 +48,7 @@
     "node": "22.x"
   },
   "optionalDependencies": {
+    "@ast-grep/napi-linux-x64-gnu": "^0.40.5",
     "@cloudflare/workerd-windows-64": "^1.20260525.1"
   }
 }
