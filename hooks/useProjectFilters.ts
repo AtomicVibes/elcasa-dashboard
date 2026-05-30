@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 export interface Project {
   id: string;
@@ -22,6 +22,7 @@ export interface ProjectFilterState {
   category: string;
   duration: string;
   status: string;
+  search: string;
 }
 
 export function useProjectFilters(projects: Project[]) {
@@ -29,16 +30,34 @@ export function useProjectFilters(projects: Project[]) {
     category: 'all',
     duration: 'all',
     status: 'all',
+    search: '',
   });
 
-  const setCategory = (category: string) =>
-    setFilters((prev) => ({ ...prev, category }));
+  const setCategory = useCallback(
+    (category: string) => setFilters((prev) => ({ ...prev, category })),
+    []
+  );
 
-  const setDuration = (duration: string) =>
-    setFilters((prev) => ({ ...prev, duration }));
+  const setDuration = useCallback(
+    (duration: string) => setFilters((prev) => ({ ...prev, duration })),
+    []
+  );
 
-  const setStatus = (status: string) =>
-    setFilters((prev) => ({ ...prev, status }));
+  const setStatus = useCallback(
+    (status: string) => setFilters((prev) => ({ ...prev, status })),
+    []
+  );
+
+  const setSearch = useCallback(
+    (search: string) => setFilters((prev) => ({ ...prev, search })),
+    []
+  );
+
+  const resetFilters = useCallback(
+    () =>
+      setFilters({ category: 'all', duration: 'all', status: 'all', search: '' }),
+    []
+  );
 
   const activeProjects = useMemo(() => {
     return projects.filter((project) => {
@@ -51,6 +70,12 @@ export function useProjectFilters(projects: Project[]) {
       if (filters.status !== 'all' && project.status !== filters.status) {
         return false;
       }
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        const haystack =
+          `${project.title} ${project.location} ${project.manager} ${project.category} ${project.status}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
       return true;
     });
   }, [projects, filters]);
@@ -60,7 +85,14 @@ export function useProjectFilters(projects: Project[]) {
     setCategory,
     setDuration,
     setStatus,
+    setSearch,
+    resetFilters,
     activeProjects,
     isEmpty: activeProjects.length === 0,
+    hasActiveFilters:
+      filters.category !== 'all' ||
+      filters.duration !== 'all' ||
+      filters.status !== 'all' ||
+      filters.search !== '',
   };
 }

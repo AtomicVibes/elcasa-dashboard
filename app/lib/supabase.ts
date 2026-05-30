@@ -5,35 +5,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 let client: SupabaseClient | null = null;
 
-let warned = false;
-
-function buildEnvGuide(): string {
-  const missing: string[] = [];
-  const vars = [
-    ['NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL],
-    ['NEXT_PUBLIC_SUPABASE_ANON_KEY', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY],
-  ] as const;
-
-  for (const [name, val] of vars) {
-    if (!val) missing.push(name);
-  }
-
-  if (missing.length === 0) return '';
-
-  return [
-    `Supabase environment variables missing: ${missing.join(', ')}.`,
-    '',
-    '  To fix this:',
-    '  1. Create a .env.local file in the project root:',
-    '',
-    '     NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co',
-    '     NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here',
-    '',
-    '  2. Restart the dev server.',
-    '',
-    '  If these are set in Cloudflare Dashboard → Workers & Pages →',
-    '  your-project → Settings → Variables, add them there for deployment.',
-  ].join('\n');
+function mask(value: string): string {
+  if (value.length <= 8) return '***';
+  return value.slice(0, 4) + '****' + value.slice(-4);
 }
 
 export function getSupabase(): SupabaseClient {
@@ -43,22 +17,24 @@ export function getSupabase(): SupabaseClient {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    if (!warned) {
-      warned = true;
-      console.error(buildEnvGuide());
-    }
+    throw new Error(
+      'Supabase environment variables are missing.\n\n' +
+      '  NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set.\n\n' +
+      '  To fix this:\n' +
+      '  1. Create a .env.local file in the project root:\n\n' +
+      '     NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co\n' +
+      '     NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here\n\n' +
+      '  2. Restart the dev server.\n\n' +
+      '  If deploying to Cloudflare, set these in Cloudflare Dashboard \u2192 Workers & Pages \u2192\n' +
+      '  your-project \u2192 Settings \u2192 Variables.'
+    );
+  }
 
-    return new Proxy(
-      {} as unknown as SupabaseClient,
-      {
-        get(_target, prop) {
-          if (!warned) {
-            warned = true;
-            console.error(buildEnvGuide());
-          }
-          return () => Promise.reject(new Error('Supabase not configured — see above.'));
-        },
-      },
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(
+      `[Supabase] Initializing client` +
+        `\n  URL: ${mask(supabaseUrl)}` +
+        `\n  Key: ${mask(supabaseAnonKey)}`
     );
   }
 

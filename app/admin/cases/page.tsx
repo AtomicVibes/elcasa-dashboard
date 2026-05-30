@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import {
   ChevronDown, ChevronUp, Calendar,
-  Pencil, Trash2, Archive, FileText
+  Pencil, Trash2, Archive, FileText, Search
 } from 'lucide-react';
 import { CustomDatePicker } from '@/components/ui/custom-date-picker';
 import { FilterButtonGroup } from '@/components/FilterButtonGroup';
@@ -58,7 +58,7 @@ const categoryGroups = [
 export default function CaseFilesIndex() {
   const { t } = useLanguage();
 
-  const { filters, setCategory, setDuration, setStatus, activeProjects, isEmpty } = useProjectFilters(activeCases);
+  const { filters, setCategory, setDuration, setStatus, setSearch, resetFilters, activeProjects, isEmpty, hasActiveFilters } = useProjectFilters(activeCases);
 
   const [activeSort, setActiveSort] = useState('closest-deadline');
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
@@ -204,7 +204,7 @@ export default function CaseFilesIndex() {
           </div>
           <button
             onClick={() => setIsNewProjectOpen(true)}
-            className="inline-flex items-center gap-2 bg-accent text-neutral-950 font-bold px-5 py-2.5 rounded-xl shadow-md hover:brightness-95 transition-all self-start shrink-0"
+            className="inline-flex items-center gap-2 bg-accent text-accent-foreground font-bold px-5 py-2.5 rounded-xl shadow-md hover:brightness-95 transition-all self-start shrink-0"
             data-i18n="cases.newBtn"
           >
             {t('cases.newBtn')}
@@ -213,31 +213,31 @@ export default function CaseFilesIndex() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <div className="bg-muted dark:bg-card p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-widest" data-i18n="cases.total">{t('cases.total')}</p>
+            <p className="text-xs font-bold text-foreground uppercase tracking-widest" data-i18n="cases.total">{t('cases.total')}</p>
             <h3 className="text-4xl lg:text-5xl font-black mt-3 text-foreground tracking-tight">{stats.total}</h3>
-            <span className="inline-flex items-center text-[11px] text-muted-foreground font-medium mt-2 px-2 py-0.5 rounded-md bg-zinc-100 border border-zinc-200 dark:bg-neutral-800 dark:border-neutral-700/40">
-              All time
+            <span className="inline-flex items-center text-[11px] text-muted-foreground font-medium mt-2 px-2 py-0.5 rounded-md bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-neutral-700/40" data-i18n="allTime">
+              {t('allTime')}
             </span>
           </div>
           <div className="bg-muted dark:bg-card p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-widest" data-i18n="inProgress">{t('inProgress')}</p>
+            <p className="text-xs font-bold text-foreground uppercase tracking-widest" data-i18n="inProgress">{t('inProgress')}</p>
             <h3 className="text-4xl lg:text-5xl font-black mt-3 text-emerald-400 tracking-tight">{stats.inProgress}</h3>
-            <span className="inline-flex items-center text-[11px] text-emerald-500 font-medium mt-2 px-2 py-0.5 rounded-md bg-emerald-500/5 border border-emerald-500/10">
-              Active
+            <span className="inline-flex items-center text-[11px] text-emerald-500 font-medium mt-2 px-2 py-0.5 rounded-md bg-emerald-500/5 border border-emerald-500/10" data-i18n="cases.badgeActive">
+              {t('cases.badgeActive')}
             </span>
           </div>
           <div className="bg-muted dark:bg-card p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-widest" data-i18n="completed">{t('completed')}</p>
+            <p className="text-xs font-bold text-foreground uppercase tracking-widest" data-i18n="completed">{t('completed')}</p>
             <h3 className="text-4xl lg:text-5xl font-black mt-3 text-blue-400 tracking-tight">{stats.completed}</h3>
-            <span className="inline-flex items-center text-[11px] text-blue-500 font-medium mt-2 px-2 py-0.5 rounded-md bg-blue-500/5 border border-blue-500/10">
-              Delivered
+            <span className="inline-flex items-center text-[11px] text-blue-500 font-medium mt-2 px-2 py-0.5 rounded-md bg-blue-500/5 border border-blue-500/10" data-i18n="cases.badgeDelivered">
+              {t('cases.badgeDelivered')}
             </span>
           </div>
           <div className="bg-muted dark:bg-card p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-widest" data-i18n="pending">{t('pending')}</p>
+            <p className="text-xs font-bold text-foreground uppercase tracking-widest" data-i18n="pending">{t('pending')}</p>
             <h3 className="text-4xl lg:text-5xl font-black mt-3 text-amber-400 tracking-tight">{stats.pending}</h3>
-            <span className="inline-flex items-center text-[11px] text-amber-500 font-medium mt-2 px-2 py-0.5 rounded-md bg-amber-500/5 border border-amber-500/10">
-              Awaiting action
+            <span className="inline-flex items-center text-[11px] text-amber-500 font-medium mt-2 px-2 py-0.5 rounded-md bg-amber-500/5 border border-amber-500/10" data-i18n="cases.badgeAwaiting">
+              {t('cases.badgeAwaiting')}
             </span>
           </div>
         </div>
@@ -271,6 +271,18 @@ export default function CaseFilesIndex() {
         <div className="flex flex-wrap items-center justify-between gap-4 bg-muted dark:bg-card border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl mb-6">
 
           <div className="flex items-center gap-3 min-w-0">
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('searchProjectsPlaceholder') || 'Search projects...'}
+              data-i18n="searchProjectsPlaceholder"
+              className="bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent min-w-[180px]"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 min-w-0">
             <label htmlFor="member-select" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground shrink-0" data-i18n="assignedToMember">
               {t('assignedToMember')}
             </label>
@@ -278,7 +290,8 @@ export default function CaseFilesIndex() {
               id="member-select"
               value={memberFilter}
               onChange={e => setMemberFilter(e.target.value)}
-              className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-accent cursor-pointer min-w-[160px]"
+              className="bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent cursor-pointer min-w-[160px]"
+              data-i18n="memberFilterSelect"
             >
               <option value="all" data-i18n="allMembers">{t('allMembers')}</option>
               {allMembers.map(name => <option key={name} value={name}>{name}</option>)}
@@ -291,11 +304,22 @@ export default function CaseFilesIndex() {
               id="sort-select"
               value={activeSort}
               onChange={e => setActiveSort(e.target.value)}
-              className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-accent cursor-pointer min-w-[195px]"
+              className="bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent cursor-pointer min-w-[195px]"
+              data-i18n="sortSelect"
             >
               {sortOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
             </select>
           </div>
+
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="text-[11px] font-semibold uppercase tracking-wider text-accent hover:opacity-80 transition-opacity"
+              data-i18n="clearFilters"
+            >
+              {t('clearFilters') || 'Clear filters'}
+            </button>
+          )}
 
         </div>
 
@@ -322,10 +346,10 @@ export default function CaseFilesIndex() {
                     className="p-6 flex items-center justify-between cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-800/30 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-foreground truncate">{project.title}</h3>
+                      <h3 className="text-lg font-bold text-foreground truncate" data-i18n={undefined}>{project.title}</h3>
                       <p className="text-xs text-muted-foreground mt-1">
                         {project.location} {'\u2022'} {t('projectManager')}: {project.manager}
-                        <span className={`ml-2 inline-block text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${statusBadge[project.status]}`}>
+                        <span className={`ml-2 inline-block text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${statusBadge[project.status]}`} data-i18n={project.status === 'In Progress' ? 'inProgress' : project.status === 'Pending' ? 'pending' : project.status === 'Completed' ? 'completed' : 'cancelled'}>
                           {project.status === 'In Progress'
                             ? t('inProgress')
                             : project.status === 'Pending'
@@ -353,25 +377,25 @@ export default function CaseFilesIndex() {
                           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground" data-i18n="administrativeOverview">
                             {t('administrativeOverview')}
                           </h4>
-                          <p className="text-sm font-semibold text-foreground">{project.title}</p>
+                          <p className="text-sm font-semibold text-foreground" data-i18n={undefined}>{project.title}</p>
 
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200" data-i18n={project.category?.toLowerCase()}>
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-background dark:bg-zinc-800 text-foreground" data-i18n={project.category?.toLowerCase()}>
                               {t(project.category?.toLowerCase() || 'renovation')}
                             </span>
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200" data-i18n={project.duration?.toLowerCase()}>
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-background dark:bg-zinc-800 text-foreground" data-i18n={project.duration?.toLowerCase()}>
                               {t(project.duration?.toLowerCase() || 'long')}
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
+                          <div className="flex items-center gap-3 p-3 rounded-xl bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
                             <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent flex-shrink-0">
                               {project.manager.split(' ').map(n => n[0]).slice(0,2).join('')}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-foreground">{project.manager}</p>
+                              <p className="text-sm font-semibold text-foreground" data-i18n={undefined}>{project.manager}</p>
                               <div className="flex gap-2 mt-0.5">
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">{project.managerRole}</span>
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-background dark:bg-zinc-800 text-foreground">{project.managerRole}</span>
                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-600/10 text-blue-400 border border-blue-600/20" data-i18n="reviewer">
                                   {t('reviewer')}: {project.reviewer}
                                 </span>
@@ -386,7 +410,8 @@ export default function CaseFilesIndex() {
                             <select
                               value={project.manager}
                               onChange={e => handleReassign(project.id, e.target.value)}
-                              className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-accent outline-none max-w-xs cursor-pointer"
+                              className="bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-foreground focus:border-accent outline-none max-w-xs cursor-pointer"
+                              data-i18n="reassignMemberSelect"
                             >
                               {teamProfiles.map(m => (
                                 <option key={m.id} value={m.name}>{m.name} ({m.function})</option>
@@ -395,18 +420,18 @@ export default function CaseFilesIndex() {
                           </div>
 
                           <div className="flex flex-wrap gap-2">
-                            <button className="border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-xs px-3 py-1.5 rounded-lg text-zinc-800 dark:text-zinc-200 hover:text-white transition-all flex items-center" data-i18n="edit">
-                              <Pencil className="w-3.5 h-3.5 mr-1.5" /><span>Edit</span>
+                            <button className="border border-zinc-200 dark:border-zinc-700 bg-background dark:bg-zinc-800 text-xs px-3 py-1.5 rounded-lg text-foreground hover:text-white transition-all flex items-center" data-i18n="edit">
+                              <Pencil className="w-3.5 h-3.5 mr-1.5" /><span>{t('edit')}</span>
                             </button>
-                            <button className="bg-red-700 text-zinc-800 dark:text-red-100 hover:opacity-90 transition-colors duration-200 border border-zinc-300 dark:border-zinc-700 text-xs px-3 py-1.5 rounded-lg flex items-center" data-i18n="cancelProjectAction">
+                            <button className="bg-red-700 text-red-100 hover:opacity-90 transition-colors duration-200 border border-zinc-300 dark:border-zinc-700 text-xs px-3 py-1.5 rounded-lg flex items-center" data-i18n="cancelProjectAction">
                               <Trash2 className="w-3.5 h-3.5 mr-1.5" /><span>{t('cancelProjectAction')}</span>
                             </button>
-                            <button className="border border-zinc-200 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 text-xs px-3 py-1.5 rounded-lg text-muted-foreground hover:text-white transition-all flex items-center" data-i18n="archive">
+                            <button className="border border-zinc-200 dark:border-zinc-700 bg-background dark:bg-zinc-800 text-xs px-3 py-1.5 rounded-lg text-muted-foreground hover:text-white transition-all flex items-center" data-i18n="archive">
                               <Archive className="w-3.5 h-3.5 mr-1.5" /><span>{t('archive')}</span>
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); window.open(`/api/report?projectId=${project.id}`, '_blank'); }}
-                              className="border border-accent/40 bg-accent/10 text-xs px-3.5 py-1.5 rounded-lg text-accent hover:bg-accent hover:text-neutral-950 font-semibold transition-all duration-200 flex items-center"
+                              className="border border-accent/40 bg-accent/10 text-xs px-3.5 py-1.5 rounded-lg text-accent hover:bg-accent hover:text-accent-foreground font-semibold transition-all duration-200 flex items-center"
                               data-i18n="overview"
                             >
                               <FileText className="w-3.5 h-3.5 mr-1.5" /><span>{t('overview')}</span>
@@ -420,11 +445,11 @@ export default function CaseFilesIndex() {
                           </h4>
 
                           <div className="grid grid-cols-2 gap-3">
-                            <div className="p-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
+                            <div className="p-3 rounded-xl bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
                               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1" data-i18n="financialProgressBudget">{t('financialProgressBudget')}</p>
                               <p className="text-sm font-bold text-foreground">{currency(project.budget)}</p>
                             </div>
-                            <div className="p-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
+                            <div className="p-3 rounded-xl bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800">
                               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1" data-i18n="financialProgressExpenses">{t('financialProgressExpenses')}</p>
                               <p className="text-sm font-bold text-amber-400">{currency(project.expenses)}</p>
                             </div>
@@ -433,7 +458,7 @@ export default function CaseFilesIndex() {
                           <div>
                             <div className="flex items-center justify-between mb-1.5">
                               <p className="text-[11px] font-medium text-muted-foreground" data-i18n="budgetUtilization">{t('budgetUtilization')}</p>
-                              <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200">{utilPct.toFixed(1)}%</p>
+                              <p className="text-[11px] font-bold text-foreground">{utilPct.toFixed(1)}%</p>
                             </div>
                             <div className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
                               <div className="h-2 bg-accent rounded-full transition-all duration-500"
@@ -447,7 +472,7 @@ export default function CaseFilesIndex() {
                       <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                         <button
                           onClick={() => setExpandedProjectId(null)}
-                          className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                          className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
                           data-i18n="retractDetails"
                         >
                           <ChevronUp className="w-3.5 h-3.5" />{t('retractDetails')}
@@ -492,7 +517,8 @@ export default function CaseFilesIndex() {
                     placeholder="e.g., Residenza Via Roma"
                     value={newTitle}
                     onChange={e => setNewTitle(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-foreground placeholder-neutral-600 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                    className="w-full bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                    data-i18n="newProjectTitleInput"
                   />
                 </div>
 
@@ -503,7 +529,8 @@ export default function CaseFilesIndex() {
                   <select
                     value={newCategory}
                     onChange={e => setNewCategory(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all appearance-none cursor-pointer"
+                    className="w-full bg-background dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all appearance-none cursor-pointer"
+                    data-i18n="newProjectCategorySelect"
                   >
                     <option value="" data-i18n="selectCategory">{t('selectCategory')}</option>
                     {categoryGroups.map(group => (
@@ -541,7 +568,8 @@ export default function CaseFilesIndex() {
               <div className="px-4 pt-4 pb-4 border-t border-zinc-200 dark:border-zinc-800 bg-muted dark:bg-card flex items-center justify-end gap-3 rounded-b-2xl shrink-0">
                 <button
                   onClick={() => setIsNewProjectOpen(false)}
-                  className="flex items-center gap-1.5 bg-red-700 text-zinc-800 dark:text-red-100 hover:opacity-90 transition-colors duration-200 border border-zinc-300 dark:border-zinc-700 px-5 py-2.5 rounded-xl text-sm font-semibold shrink-0"
+                  className="flex items-center gap-1.5 bg-red-700 text-red-100 hover:opacity-90 transition-colors duration-200 border border-zinc-300 dark:border-zinc-700 px-5 py-2.5 rounded-xl text-sm font-semibold shrink-0"
+                  data-i18n="cancelProjectAction"
                 >
                   <span>{'\u2715'}</span> {t('cancelProjectAction')}
                 </button>
@@ -550,8 +578,8 @@ export default function CaseFilesIndex() {
                   disabled={!newProjectFormIsValid}
                   className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0 ${
                     newProjectFormIsValid
-                      ? 'bg-accent text-neutral-950 hover:brightness-90 active:scale-[0.98] cursor-pointer'
-                      : 'bg-zinc-200 dark:bg-zinc-800 text-muted-foreground cursor-not-allowed'
+                      ? 'bg-accent text-accent-foreground hover:brightness-90 active:scale-[0.98] cursor-pointer'
+                      : 'bg-muted dark:bg-zinc-800 text-muted-foreground cursor-not-allowed'
                   }`}
                   data-i18n="createProject"
                 >
