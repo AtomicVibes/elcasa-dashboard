@@ -35,7 +35,7 @@ export function FilterButtonGroup({
           className={
             active === key
               ? 'bg-accent/10 border-accent text-accent px-4 py-1.5 rounded-full border text-xs font-medium transition-all'
-              : 'bg-muted dark:bg-card border-zinc-300 dark:border-zinc-700 text-muted-foreground dark:hover:text-foreground px-4 py-1.5 rounded-full border text-xs transition-all'
+              : 'bg-muted dark:bg-card border-muted-foreground/20 dark:border-zinc-700 text-muted-foreground dark:hover:text-foreground px-4 py-1.5 rounded-full border text-xs transition-all'
           }
         >
           {label}

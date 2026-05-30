@@ -346,7 +346,7 @@ export default function CaseFilesIndex() {
                     className="p-6 flex items-center justify-between cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-800/30 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-foreground truncate" data-i18n={undefined}>{project.title}</h3>
+                      <h3 className="text-lg font-bold text-foreground truncate">{project.title}</h3>
                       <p className="text-xs text-muted-foreground mt-1">
                         {project.location} {'\u2022'} {t('projectManager')}: {project.manager}
                         <span className={`ml-2 inline-block text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${statusBadge[project.status]}`} data-i18n={project.status === 'In Progress' ? 'inProgress' : project.status === 'Pending' ? 'pending' : project.status === 'Completed' ? 'completed' : 'cancelled'}>
@@ -377,7 +377,7 @@ export default function CaseFilesIndex() {
                           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground" data-i18n="administrativeOverview">
                             {t('administrativeOverview')}
                           </h4>
-                          <p className="text-sm font-semibold text-foreground" data-i18n={undefined}>{project.title}</p>
+                          <p className="text-sm font-semibold text-foreground">{project.title}</p>
 
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-background dark:bg-zinc-800 text-foreground" data-i18n={project.category?.toLowerCase()}>
@@ -393,7 +393,7 @@ export default function CaseFilesIndex() {
                               {project.manager.split(' ').map(n => n[0]).slice(0,2).join('')}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-foreground" data-i18n={undefined}>{project.manager}</p>
+                              <p className="text-sm font-semibold text-foreground">{project.manager}</p>
                               <div className="flex gap-2 mt-0.5">
                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-background dark:bg-zinc-800 text-foreground">{project.managerRole}</span>
                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-600/10 text-blue-400 border border-blue-600/20" data-i18n="reviewer">
