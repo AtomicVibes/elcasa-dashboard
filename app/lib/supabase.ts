@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 let client: SupabaseClient | null = null;
+let warningEmitted = false;
 
 function mask(value: string): string {
   if (value.length <= 8) return '***';
@@ -18,30 +19,31 @@ export function getSupabase(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const log =
-    typeof console !== 'undefined'
-      ? (msg: string) => console.log(msg)
-      : () => {};
-
-  log(
-    `[Supabase] Initializing client` +
-      `\n  URL: ${supabaseUrl ? mask(supabaseUrl) : '⛔ NOT SET'}` +
-      `\n  Key: ${supabaseAnonKey ? mask(supabaseAnonKey) : '⛔ NOT SET'}` +
-      `\n  Environment: ${process.env.NODE_ENV ?? 'unknown'}` +
-      `\n  Runtime: ${isBrowser() ? 'browser' : 'server'}`
-  );
-
   if (!supabaseUrl || !supabaseAnonKey) {
+    if (process.env.NEXT_PHASE === 'phase-production-build' && !warningEmitted) {
+      warningEmitted = true;
+      console.warn(
+        '[Supabase] Keys missing during build phase.\n' +
+        '  This is expected if deploying to Cloudflare without build-time env injection.\n' +
+        '  Set .env.local locally and ensure deployment platform has these variables.'
+      );
+    }
+
     throw new Error(
-      `Supabase environment variables are missing.\n\n` +
-      `  NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set.\n\n` +
-      `  To fix this:\n` +
-      `  1. Create a .env.local file in the project root:\n\n` +
-      `     NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co\n` +
-      `     NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here\n\n` +
-      `  2. Restart the dev server or rebuild.\n\n` +
-      `  If deploying to Cloudflare, set these in Cloudflare Dashboard → Workers & Pages →\n` +
-      `  your-project → Settings → Variables.`
+      'Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY) are not set.\n' +
+      '  - Local dev: create .env.local with these values.\n' +
+      '  - Cloudflare: set them in Dashboard → Workers & Pages → project → Settings → Variables.\n' +
+      '  - Build CI: pass them as --build-env arguments or set in CI secrets.'
+    );
+  }
+
+  if (typeof console !== 'undefined') {
+    console.log(
+      `[Supabase] Initializing client` +
+      `\n  URL: ${mask(supabaseUrl)}` +
+      `\n  Key: ${mask(supabaseAnonKey)}` +
+      `\n  Env: ${process.env.NODE_ENV ?? 'unknown'}` +
+      `\n  Runtime: ${isBrowser() ? 'browser' : 'server'}`
     );
   }
 
