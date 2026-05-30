@@ -11,7 +11,7 @@ type UploadedAsset = {
   timestamp: number;
 };
 
-const STORAGE_BUCKET = 'media';
+const STORAGE_BUCKET = 'Photos';
 
 function isImageFile(name: string): boolean {
   return /\.(jpg|jpeg|png|gif|webp|svg|bmp|avif|heic)$/i.test(name);
