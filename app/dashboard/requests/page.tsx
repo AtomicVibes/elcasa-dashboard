@@ -77,7 +77,7 @@ export default function RequestsIndex() {
                       </span>
                     </td>
                     <td className="py-5 px-6 text-right">
-                      <Link href={`/admin/requests/${item.id}`} className="text-[#FFB800] text-xs font-bold hover:underline">
+                      <Link href={`/dashboard/requests/${item.id}`} className="text-[#FFB800] text-xs font-bold hover:underline">
                         {lang === 'EN' ? 'Inspect File' : 'Ispeziona'} →
                       </Link>
                     </td>

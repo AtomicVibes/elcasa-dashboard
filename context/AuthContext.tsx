@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
@@ -24,6 +25,7 @@ type AuthContextValue = {
   session: Session | null;
   permissionRole: PermissionRole | null;
   loading: boolean;
+  authError: string | null;
   supabase: SupabaseClient;
   signIn: (params: { email: string; password: string }) => Promise<void>;
   signUp: (params: {
@@ -64,6 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [permissionRole, setPermissionRole] = useState<PermissionRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const hangTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadSessionAndRole = useCallback(async () => {
     setLoading(true);
@@ -74,29 +78,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authManager.handleError(error, "loadSession");
     }
 
-    const nextSession = data.session ?? null;
-    setSession(nextSession);
-    setUser(nextSession?.user ?? null);
+      console.log("[AUTH_TRACE] BEFORE getSupabase().auth.getSession()");
+      const { data, error } = await getSupabase().auth.getSession();
+      console.log("[AUTH_TRACE] AFTER getSupabase().auth.getSession()", { hasSession: !!data?.session, error });
+      if (error) {
+        console.error("[AUTH_TRACE] getSession error:", error);
+        setAuthError(`Session check failed: ${error.message}`);
+      }
 
-    if (nextSession?.user?.id) {
-      const role = await fetchPermissionRole(nextSession.user.id);
-      setPermissionRole(role);
-    } else {
+      const nextSession = data.session ?? null;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user?.id) {
+        console.log("[AUTH_TRACE] BEFORE fetchPermissionRole", { userId: nextSession.user.id });
+        const role = await fetchPermissionRole(nextSession.user.id);
+        console.log("[AUTH_TRACE] AFTER fetchPermissionRole", { role });
+        setPermissionRole(role);
+      } else {
+        setPermissionRole(null);
+      }
+    } catch (err) {
+      console.error("[AUTH_TRACE] loadSessionAndRole threw", {
+        name: (err as Error)?.name,
+        message: (err as Error)?.message,
+      });
+      setAuthError("Could not verify authentication. Check your network connection.");
+      setSession(null);
+      setUser(null);
       setPermissionRole(null);
+    } finally {
+      setLoading(false);
+      console.log("[AUTH_TRACE] loadSessionAndRole END — loading set to false");
     }
-
-    setLoading(false);
   }, []);
 
   useEffect(() => {
-    loadSessionAndRole();
+    hangTimeoutRef.current = setTimeout(() => {
+      console.error("[AUTH_TRACE] AUTH_HANG_DETECTED — 12s timeout fired, forcing loading=false (session might be stale, letting user see the page)");
+      setLoading(false);
+    }, 12000);
+    console.log("[AUTH_TRACE] hangTimeout set for 12000ms — session will be checked on next navigation if still null");
 
     const { data: sub } = getSupabase().auth.onAuthStateChange(async (_event: string, nextSession: Session | null) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
 
       if (nextSession?.user?.id) {
+        console.log("[AUTH_TRACE] onAuthStateChange BEFORE fetchPermissionRole", { userId: nextSession.user.id });
         const role = await fetchPermissionRole(nextSession.user.id);
+        console.log("[AUTH_TRACE] onAuthStateChange AFTER fetchPermissionRole", { role });
         setPermissionRole(role);
       } else {
         setPermissionRole(null);
@@ -104,6 +135,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      if (hangTimeoutRef.current) {
+        clearTimeout(hangTimeoutRef.current);
+        hangTimeoutRef.current = null;
+      }
       sub.subscription.unsubscribe();
     };
   }, [loadSessionAndRole]);
@@ -174,6 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       permissionRole,
       loading,
+      authError,
       supabase: getSupabase(),
       signIn,
       signUp,

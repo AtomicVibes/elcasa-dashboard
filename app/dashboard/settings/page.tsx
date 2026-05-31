@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Settings, User, Sun, Moon, Monitor, Globe, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/context/ThemeContext';
 
 type SettingsTab = 'settings' | 'profile';
 

@@ -2,8 +2,9 @@ import { defineCloudflareConfig } from "@opennextjs/cloudflare";
 
 const config = defineCloudflareConfig({});
 
-// Tell OpenNext to run `next build` directly instead of `npm run build`,
-// preventing recursive re-triggering when `build` script includes `opennextjs-cloudflare build`.
-(config as any).buildCommand = "next build";
+// Custom build script: runs `next build`, then copies `middleware.js`
+// into `.next/standalone/` — required because Next.js 16 omits it from
+// the standalone output, but OpenNext' s copyTracedFiles expects it.
+(config as any).buildCommand = "node scripts/build.cjs";
 
 export default config;

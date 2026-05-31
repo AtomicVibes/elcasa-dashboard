@@ -1,22 +1,12 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "arcadia",
-  "compatibility_date": "2026-05-25",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": {
-    "enabled": true
-  },
-
-  // ✅ OpenNext Worker entry point
   "main": ".open-next/worker.js",
-
-  // ✅ OpenNext assets output
+  "compatibility_date": "2026-05-31",
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".open-next/assets"
   },
-
-  // Prevents Wrangler's esbuild from injecting __name helper,
-  // which causes "Uncaught ReferenceError: __name is not defined"
-  // when Next.js libraries serialize/deserialize function strings.
-  "keep_names": false
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://dsstigrftoqfktnqkgxn.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Vc6l9WfcEM7WVjRQK-C2NQ_HgnHgkk4"
+  }
 }

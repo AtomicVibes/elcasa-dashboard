@@ -1,6 +1,6 @@
 "use client";
 import { useId, useState } from "react";
-import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
@@ -38,11 +38,13 @@ function PasswordInput({
   onChange,
   placeholder,
   isDark,
+  autoComplete,
 }: {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder: string;
   isDark: boolean;
+  autoComplete?: string;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   return (
@@ -54,6 +56,7 @@ function PasswordInput({
         placeholder={placeholder}
         className="pr-12"
         isDark={isDark}
+        autoComplete={autoComplete}
       />
       <button
         type="button"
@@ -117,7 +120,7 @@ function getErrorMessage(err: unknown): string {
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn, signUp, loading, supabase } = useAuth();
+  const { signIn, signUp, loading, authError, supabase } = useAuth();
   const { theme } = useGlobalTheme();
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [fullName, setFullName] = useState("");
@@ -145,6 +148,37 @@ export default function AuthPage() {
           isDark ? "bg-[#18181b] border-[#27272a]" : "bg-white border-[#e4e4e7]"
         )}>
           Checking session...
+        </div>
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className={cn(
+        "min-h-screen flex items-center justify-center relative p-4 transition-colors duration-300",
+        isDark ? "bg-[#09090b] text-white" : "bg-[#f4f4f5] text-black"
+      )}>
+        <div className={cn(
+          "w-full max-w-md p-8 border rounded-2xl shadow-xl font-bold text-center space-y-4",
+          isDark ? "bg-[#18181b] border-[#27272a]" : "bg-white border-[#e4e4e7]"
+        )}>
+          <div className="flex justify-center">
+            <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+              <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+            {authError}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-[#FFC107] text-zinc-950 rounded-xl text-sm font-bold hover:bg-[#e5a500] transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -221,13 +255,10 @@ export default function AuthPage() {
         isDark ? "bg-[#18181b] border-[#27272a]" : "bg-white border-[#e4e4e7]"
       )}>
         <div className="flex flex-col items-center mb-8">
-          <Image
+          <img
             src="/logo.png"
             alt="Arcadia Logo"
-            width={180}
-            height={48}
             className="h-12 w-auto mb-4"
-            priority
           />
           <h2 className={cn("text-2xl font-extrabold text-center tracking-tight mb-2", isDark ? "text-white" : "text-black")}>
             {activeTab === "login" ? "Welcome back" : "Join us"}
@@ -302,8 +333,23 @@ export default function AuthPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               isDark={isDark}
+              autoComplete={activeTab === "login" ? "current-password" : "new-password"}
             />
           </div>
+
+          {activeTab === "login" && (
+            <div className="flex justify-end -mt-2">
+              <Link
+                href="/auth/forgot-password"
+                className={cn(
+                  "text-xs font-bold transition-colors",
+                  isDark ? "text-zinc-400 hover:text-[#FFC107]" : "text-zinc-600 hover:text-[#F9A825]"
+                )}
+              >
+                Forgot Password?
+              </Link>
+            </div>
+          )}
 
           {activeTab === "signup" && (
             <div>
@@ -315,6 +361,7 @@ export default function AuthPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 isDark={isDark}
+                autoComplete="new-password"
               />
             </div>
           )}

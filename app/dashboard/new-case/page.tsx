@@ -43,7 +43,7 @@ export default function NewCaseCreationForm() {
     if (error) {
       toast.error(`Database rejected entry stream: ${error.message}`);
     } else {
-      router.push('/admin/requests');
+      router.push('/dashboard/requests');
     }
   };
 

@@ -1,21 +1,18 @@
 "use client";
 
-import { ThemeProvider as NextThemeProvider, useTheme as useNextTheme } from "next-themes";
 import type { ReactNode } from "react";
+import { ThemeProvider as NativeThemeProvider, useTheme } from "@/context/ThemeContext";
 
 export function GlobalThemeProvider({ children }: { children: ReactNode }) {
-  return (
-    <NextThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      {children}
-    </NextThemeProvider>
-  );
+  return <NativeThemeProvider>{children}</NativeThemeProvider>;
 }
 
 export function useGlobalTheme() {
-  const { theme, setTheme, resolvedTheme } = useNextTheme();
+  const { resolvedTheme, setTheme, isDark, mounted } = useTheme();
   return {
-    theme: (resolvedTheme ?? "dark") as "light" | "dark",
-    rawTheme: (theme ?? "dark") as "light" | "dark" | "system",
+    theme: resolvedTheme,
     setTheme,
+    isDark,
+    mounted,
   };
 }
