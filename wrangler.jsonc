@@ -8,5 +8,5 @@
   "vars": {
     "NEXT_PUBLIC_SUPABASE_URL": "https://dsstigrftoqfktnqkgxn.supabase.co",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Vc6l9WfcEM7WVjRQK-C2NQ_HgnHgkk4"
-  }
+  },"name": "elcasa-dashboard"
 }
