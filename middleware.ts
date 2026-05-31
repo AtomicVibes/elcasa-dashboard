@@ -11,6 +11,7 @@ export async function middleware(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('[Middleware] Supabase env vars missing — skipping auth checks')
     return supabaseResponse
   }
 
