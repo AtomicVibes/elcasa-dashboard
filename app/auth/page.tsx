@@ -1,6 +1,7 @@
 "use client";
 import { useId, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
@@ -335,6 +336,20 @@ export default function AuthPage() {
               isDark={isDark}
             />
           </div>
+
+          {activeTab === "login" && (
+            <div className="flex justify-end -mt-2">
+              <Link
+                href="/auth/forgot-password"
+                className={cn(
+                  "text-xs font-bold transition-colors",
+                  isDark ? "text-zinc-400 hover:text-[#FFC107]" : "text-zinc-600 hover:text-[#F9A825]"
+                )}
+              >
+                Forgot Password?
+              </Link>
+            </div>
+          )}
 
           {activeTab === "signup" && (
             <div>
