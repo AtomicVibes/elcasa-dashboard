@@ -1,6 +1,5 @@
 "use client";
 import { useId, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -39,11 +38,13 @@ function PasswordInput({
   onChange,
   placeholder,
   isDark,
+  autoComplete,
 }: {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder: string;
   isDark: boolean;
+  autoComplete?: string;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   return (
@@ -55,6 +56,7 @@ function PasswordInput({
         placeholder={placeholder}
         className="pr-12"
         isDark={isDark}
+        autoComplete={autoComplete}
       />
       <button
         type="button"
@@ -253,13 +255,10 @@ export default function AuthPage() {
         isDark ? "bg-[#18181b] border-[#27272a]" : "bg-white border-[#e4e4e7]"
       )}>
         <div className="flex flex-col items-center mb-8">
-          <Image
+          <img
             src="/logo.png"
             alt="Arcadia Logo"
-            width={180}
-            height={48}
             className="h-12 w-auto mb-4"
-            priority
           />
           <h2 className={cn("text-2xl font-extrabold text-center tracking-tight mb-2", isDark ? "text-white" : "text-black")}>
             {activeTab === "login" ? "Welcome back" : "Join us"}
@@ -334,6 +333,7 @@ export default function AuthPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               isDark={isDark}
+              autoComplete={activeTab === "login" ? "current-password" : "new-password"}
             />
           </div>
 
@@ -361,6 +361,7 @@ export default function AuthPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 isDark={isDark}
+                autoComplete="new-password"
               />
             </div>
           )}
