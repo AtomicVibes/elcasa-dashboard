@@ -5,6 +5,7 @@ import './globals.css';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { GlobalThemeProvider } from '@/components/theme-provider';
+import { THEME_INIT_SCRIPT } from '@/app/theme-init';
 import type { TranslationLanguage } from '@/constants/translations';
 
 export const metadata = {
@@ -30,6 +31,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang={initialLanguage} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="antialiased transition-colors duration-500">
         <GlobalThemeProvider>
           <AuthProvider>

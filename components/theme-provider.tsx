@@ -1,29 +1,18 @@
 "use client";
 
-import { ThemeProvider as NextThemeProvider, useTheme as useNextTheme } from "next-themes";
 import type { ReactNode } from "react";
-
-/** Set NEXT_PUBLIC_DISABLE_THEME_PROVIDER_FOR_TEST=true in .env.local to bypass ThemeProvider */
-const isDisabled =
-  process.env.NEXT_PUBLIC_DISABLE_THEME_PROVIDER_FOR_TEST === "true";
+import { ThemeProvider as NativeThemeProvider, useTheme } from "@/context/ThemeContext";
 
 export function GlobalThemeProvider({ children }: { children: ReactNode }) {
-  if (isDisabled) {
-    return <>{children}</>;
-  }
-
-  return (
-    <NextThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      {children}
-    </NextThemeProvider>
-  );
+  return <NativeThemeProvider>{children}</NativeThemeProvider>;
 }
 
 export function useGlobalTheme() {
-  const { theme, setTheme, resolvedTheme } = useNextTheme();
+  const { resolvedTheme, setTheme, isDark, mounted } = useTheme();
   return {
-    theme: (resolvedTheme ?? "dark") as "light" | "dark",
-    rawTheme: (theme ?? "dark") as "light" | "dark" | "system",
+    theme: resolvedTheme,
     setTheme,
+    isDark,
+    mounted,
   };
 }

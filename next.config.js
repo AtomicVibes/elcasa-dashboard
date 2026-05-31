@@ -11,10 +11,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-/** Diagnostic: set NEXT_PUBLIC_DISABLE_THEME_PROVIDER_FOR_TEST=true to bypass next-themes ThemeProvider */
-const DISABLE_THEME_PROVIDER_FOR_TEST =
-  process.env.NEXT_PUBLIC_DISABLE_THEME_PROVIDER_FOR_TEST === "true";
-
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -28,8 +25,6 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKey,
-    NEXT_PUBLIC_DISABLE_THEME_PROVIDER_FOR_TEST:
-      String(DISABLE_THEME_PROVIDER_FOR_TEST),
   },
 
   async rewrites() {
