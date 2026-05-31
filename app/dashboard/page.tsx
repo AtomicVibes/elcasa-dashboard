@@ -54,6 +54,8 @@ const { language } = useLanguage();
     getStats();
   }, []);
 
+  console.log("Rendering Dashboard component");
+
   return (
     <div className="min-h-screen bg-white text-zinc-900 dark:bg-[#131313] dark:text-white transition-colors duration-200">
       <Sidebar />

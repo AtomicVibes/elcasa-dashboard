@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const BYPASS_CALIBRATION = true;
+
 export default function RootIndexRedirect() {
   const router = useRouter();
   const [timedOut, setTimedOut] = useState(false);
@@ -32,9 +34,15 @@ export default function RootIndexRedirect() {
     }
   }, [timedOut, router]);
 
-  return (
-    <div className="min-h-screen bg-[#121212] flex items-center justify-center text-xs text-neutral-500 animate-pulse">
-      {timedOut ? "Connection timed out — redirecting..." : "Calibrating routing matrix parameters..."}
-    </div>
-  );
+  const loading = true;
+
+  if (loading && !BYPASS_CALIBRATION) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center text-xs text-neutral-500 animate-pulse">
+        {timedOut ? "Connection timed out — redirecting..." : "Calibrating routing matrix parameters..."}
+      </div>
+    );
+  }
+
+  return null;
 }
