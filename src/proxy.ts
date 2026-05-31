@@ -8,6 +8,22 @@ export async function proxy(request: NextRequest) {
 
   console.log('[Proxy] ENTRY', { pathname, method: request.method, url: request.url, origin })
 
+  // ── Log the RAW Cookie header exactly as the browser sent it ──────────
+  // This is the single source of truth for whether sb- cookies exist.
+  const rawCookieHeader = request.headers.get('cookie') ?? '(none)'
+  const cookieParts = rawCookieHeader.split(';').map(s => s.trim()).filter(Boolean)
+  const sbCookiesInHeader = cookieParts.filter(c => c.startsWith('sb-'))
+  console.log('[Proxy] COOKIE_HEADER', {
+    rawLength: rawCookieHeader.length,
+    numCookies: cookieParts.length,
+    cookieNames: cookieParts.map(c => c.split('=')[0]),
+    sbCookies: sbCookiesInHeader.map(c => {
+      const [n, ...rest] = c.split('=')
+      return `${n}=${rest.join('=').slice(0, 40)}...`
+    }),
+    hasSbCookies: sbCookiesInHeader.length > 0,
+  })
+
   const allCookies = request.cookies.getAll()
   const sbCookie = allCookies.find(c => c.name.startsWith('sb-'))
   console.log('[Proxy] COOKIES_IN', {
@@ -45,8 +61,9 @@ export async function proxy(request: NextRequest) {
     },
     cookieOptions: {
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       path: '/',
+      httpOnly: true,
     },
   })
 
@@ -61,14 +78,14 @@ export async function proxy(request: NextRequest) {
     hasSession: !!session,
     duration: `${getSessionDuration}ms`,
     userId: session?.user?.id ?? null,
+    accessTokenPreview: session?.access_token
+      ? `${session.access_token.slice(0, 16)}...`
+      : null,
   })
 
   let user = session?.user ?? null
 
   // ── PHASE 2: When we have a session cookie, verify it with getUser() ──
-  // If getUser() fails for any reason (network error, timeout, Auth API unreachable
-  // from the Cloudflare edge), we TRUST the cookie and fail OPEN.
-  // This is the critical fix for the infinite redirect loop.
   if (session?.user) {
     const getUserStart = Date.now()
     const { data: { user: verifiedUser }, error } = await supabase.auth.getUser()
