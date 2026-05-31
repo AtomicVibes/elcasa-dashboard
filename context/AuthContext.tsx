@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
@@ -23,6 +24,7 @@ type AuthContextValue = {
   session: Session | null;
   permissionRole: PermissionRole | null;
   loading: boolean;
+  authError: string | null;
   supabase: SupabaseClient;
   signIn: (params: { email: string; password: string }) => Promise<void>;
   signUp: (params: {
@@ -63,9 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [permissionRole, setPermissionRole] = useState<PermissionRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const hangTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadSessionAndRole = useCallback(async () => {
     setLoading(true);
+    setAuthError(null);
     const { data, error } = await getSupabase().auth.getSession();
     if (error) {
       // eslint-disable-next-line no-console
@@ -87,7 +92,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    loadSessionAndRole();
+    hangTimeoutRef.current = setTimeout(() => {
+      console.error("AUTH_HANG_DETECTED");
+      setAuthError("Authentication check timed out. Please refresh the page.");
+      setLoading(false);
+    }, 5000);
+
+    loadSessionAndRole().finally(() => {
+      if (hangTimeoutRef.current) {
+        clearTimeout(hangTimeoutRef.current);
+        hangTimeoutRef.current = null;
+      }
+    });
 
     const { data: sub } = getSupabase().auth.onAuthStateChange(async (_event: string, nextSession: Session | null) => {
 
@@ -103,6 +119,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      if (hangTimeoutRef.current) {
+        clearTimeout(hangTimeoutRef.current);
+        hangTimeoutRef.current = null;
+      }
       sub.subscription.unsubscribe();
     };
   }, [loadSessionAndRole]);
@@ -163,12 +183,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       permissionRole,
       loading,
+      authError,
       supabase: getSupabase(),
       signIn,
       signUp,
       signOut,
     }),
-    [user, session, permissionRole, loading, signIn, signUp, signOut]
+    [user, session, permissionRole, loading, authError, signIn, signUp, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

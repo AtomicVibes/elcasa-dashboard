@@ -117,7 +117,7 @@ function getErrorMessage(err: unknown): string {
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn, signUp, loading, supabase } = useAuth();
+  const { signIn, signUp, loading, authError, supabase } = useAuth();
   const { theme } = useGlobalTheme();
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [fullName, setFullName] = useState("");
@@ -145,6 +145,37 @@ export default function AuthPage() {
           isDark ? "bg-[#18181b] border-[#27272a]" : "bg-white border-[#e4e4e7]"
         )}>
           Checking session...
+        </div>
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className={cn(
+        "min-h-screen flex items-center justify-center relative p-4 transition-colors duration-300",
+        isDark ? "bg-[#09090b] text-white" : "bg-[#f4f4f5] text-black"
+      )}>
+        <div className={cn(
+          "w-full max-w-md p-8 border rounded-2xl shadow-xl font-bold text-center space-y-4",
+          isDark ? "bg-[#18181b] border-[#27272a]" : "bg-white border-[#e4e4e7]"
+        )}>
+          <div className="flex justify-center">
+            <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+              <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+            {authError}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-[#FFC107] text-zinc-950 rounded-xl text-sm font-bold hover:bg-[#e5a500] transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
