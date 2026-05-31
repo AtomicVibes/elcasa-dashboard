@@ -72,9 +72,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadSessionAndRole = useCallback(async () => {
     setLoading(true);
 
+    // ── Debug: log env var presence to trace production missing-env issues ──
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    console.log("[AUTH_TRACE] Env check", {
+      hasUrl: !!supabaseUrl,
+      urlPreview: supabaseUrl ? `${supabaseUrl.slice(0, 12)}...` : null,
+      hasKey: !!supabaseAnonKey,
+      keyPreview: supabaseAnonKey ? `${supabaseAnonKey.slice(0, 4)}...` : null,
+    });
+
     try {
       console.log("[AUTH_TRACE] BEFORE getSupabase().auth.getSession()");
-      const { data, error } = await getSupabase().auth.getSession();
+
+      // 8-second per-call timeout so a single stuck request never freezes the app
+      const sessionPromise = getSupabase().auth.getSession();
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("getSession timed out after 8s")), 8000),
+      );
+
+      const { data, error } = await Promise.race([sessionPromise, timeout]);
       console.log("[AUTH_TRACE] AFTER getSupabase().auth.getSession()", { hasSession: !!data?.session, error });
 
       if (error) {

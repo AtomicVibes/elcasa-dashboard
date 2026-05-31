@@ -1451,7 +1451,7 @@ feature.enabled
               <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center text-zinc-950 overflow-hidden">
                 <img
-                  src="/assets/MAINLOGO.png"
+                  src="/MAINLOGO.png"
                   alt="Arcadia logo"
                   className="w-5 h-5 object-contain"
                 />
