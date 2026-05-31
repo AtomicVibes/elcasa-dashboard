@@ -78,7 +78,7 @@ const { language } = useLanguage();
           
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <Link 
-              href="/admin/new-case" 
+              href="/dashboard/new-case" 
               className="flex-1 sm:flex-initial bg-[#FFB800] text-neutral-950 text-xs font-bold px-5 py-3 rounded-xl hover:bg-[#E5A500] transition-all shadow-lg shadow-[#FFB800]/10 hover:shadow-[#FFB800]/20 active:scale-95 text-center flex items-center justify-center gap-1.5"
             >
               <span>+</span>
@@ -146,7 +146,7 @@ const { language } = useLanguage();
                 {lang === 'EN' ? 'Recent Case Files' : 'Fascicoli Recenti'}
               </h2>
               <Link 
-                href="/admin/requests" 
+                href="/dashboard/requests" 
                 className="text-[#FFB800] text-xs font-bold hover:text-[#E5A500] transition-colors flex items-center gap-1 group/link"
               >
                 <span>{lang === 'EN' ? 'View all' : 'Vedi tutti'}</span>

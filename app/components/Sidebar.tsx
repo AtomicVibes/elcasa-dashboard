@@ -24,15 +24,15 @@ export default function Sidebar() {
 
   const navItems = useMemo(
     () => [
-      { name: t('dashboard'),    path: '/admin',            icon: LayoutDashboard },
-      { name: t('projects'),    path: '/admin/cases',       icon: FolderOpen },
-      { name: t('tasks'),        path: '/admin/jobs',        icon: CheckSquare2 },
-      { name: t('leaveRequests'),path: '/admin/leave-requests', icon: CalendarClock },
-      { name: t('photosMedia'), path: '/admin/media',       icon: Image },
-      { name: t('timeline'),    path: '/admin/timeline',    icon: Clock },
-      { name: t('customers'),   path: '/admin/customers',   icon: Briefcase },
-      { name: t('team'),        path: '/admin/team',        icon: Users },
-      { name: t('settings'),    path: '/admin/settings',    icon: Settings },
+      { name: t('dashboard'),    path: '/dashboard',            icon: LayoutDashboard },
+      { name: t('projects'),    path: '/dashboard/cases',       icon: FolderOpen },
+      { name: t('tasks'),        path: '/dashboard/jobs',        icon: CheckSquare2 },
+      { name: t('leaveRequests'),path: '/dashboard/leave-requests', icon: CalendarClock },
+      { name: t('photosMedia'), path: '/dashboard/media',       icon: Image },
+      { name: t('timeline'),    path: '/dashboard/timeline',    icon: Clock },
+      { name: t('customers'),   path: '/dashboard/customers',   icon: Briefcase },
+      { name: t('team'),        path: '/dashboard/team',        icon: Users },
+      { name: t('settings'),    path: '/dashboard/settings',    icon: Settings },
 
     ],
     [t]

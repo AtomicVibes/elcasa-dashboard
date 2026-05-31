@@ -54,7 +54,7 @@ export default function RequestDetailView({ params }: { params: Promise<{ id: st
     setActionLoading(false);
     if (!error) {
       toast.success(lang === 'EN' ? 'Case file successfully created!' : 'Fascicolo creato con successo!');
-      router.push('/admin/requests');
+      router.push('/dashboard/requests');
     }
   };
 

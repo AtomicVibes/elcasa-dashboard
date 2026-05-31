@@ -240,7 +240,7 @@ export default function TeamManagementPage() {
                             m.projects.map((p, idx) => (
                               <Link
                                 key={idx}
-                                href="/admin/cases"
+                                href="/dashboard/cases"
                                 className="text-sm text-zinc-800 dark:text-zinc-200 break-words line-clamp-2 max-w-full underline underline-offset-2"
                               >
                                 {p}
