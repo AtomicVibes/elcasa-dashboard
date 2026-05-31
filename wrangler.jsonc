@@ -1,7 +1,7 @@
 {
-  "main": ".vercel/output/functions/_render.func/index.js",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2026-05-31",
   "assets": {
-    "directory": ".vercel/output/static"
+    "directory": ".open-next/assets"
   }
 }

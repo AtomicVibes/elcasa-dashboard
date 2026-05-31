@@ -9,7 +9,7 @@
     "build": "opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "if [ -d \".vercel/output\" ]; then opennextjs-cloudflare deploy; else echo \"Build output missing\" && exit 1; fi",
+    "deploy": "npx wrangler deploy",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview"
   },
   "dependencies": {
