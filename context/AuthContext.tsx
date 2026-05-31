@@ -69,42 +69,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hangTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadSessionAndRole = useCallback(async () => {
-    console.log("[AUTH_TRACE] loadSessionAndRole START");
-    setLoading(true);
-    setAuthError(null);
+    try {
+      console.log("[AUTH_TRACE] loadSessionAndRole START");
+      setLoading(true);
+      setAuthError(null);
 
-    console.log("[AUTH_TRACE] BEFORE getSupabase().auth.getSession()");
-    const { data, error } = await getSupabase().auth.getSession();
-    console.log("[AUTH_TRACE] AFTER getSupabase().auth.getSession()", { hasSession: !!data?.session, error });
-    if (error) {
-      // eslint-disable-next-line no-console
-      console.error("getSession error:", error);
-    }
+      console.log("[AUTH_TRACE] BEFORE getSupabase().auth.getSession()");
+      const { data, error } = await getSupabase().auth.getSession();
+      console.log("[AUTH_TRACE] AFTER getSupabase().auth.getSession()", { hasSession: !!data?.session, error });
+      if (error) {
+        console.error("[AUTH_TRACE] getSession error:", error);
+        setAuthError(`Session check failed: ${error.message}`);
+      }
 
-    const nextSession = data.session ?? null;
-    setSession(nextSession);
-    setUser(nextSession?.user ?? null);
+      const nextSession = data.session ?? null;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
 
-    if (nextSession?.user?.id) {
-      console.log("[AUTH_TRACE] BEFORE fetchPermissionRole", { userId: nextSession.user.id });
-      const role = await fetchPermissionRole(nextSession.user.id);
-      console.log("[AUTH_TRACE] AFTER fetchPermissionRole", { role });
-      setPermissionRole(role);
-    } else {
+      if (nextSession?.user?.id) {
+        console.log("[AUTH_TRACE] BEFORE fetchPermissionRole", { userId: nextSession.user.id });
+        const role = await fetchPermissionRole(nextSession.user.id);
+        console.log("[AUTH_TRACE] AFTER fetchPermissionRole", { role });
+        setPermissionRole(role);
+      } else {
+        setPermissionRole(null);
+      }
+    } catch (err) {
+      console.error("[AUTH_TRACE] loadSessionAndRole threw", {
+        name: (err as Error)?.name,
+        message: (err as Error)?.message,
+      });
+      setAuthError("Could not verify authentication. Check your network connection.");
+      setSession(null);
+      setUser(null);
       setPermissionRole(null);
+    } finally {
+      setLoading(false);
+      console.log("[AUTH_TRACE] loadSessionAndRole END — loading set to false");
     }
-
-    setLoading(false);
-    console.log("[AUTH_TRACE] loadSessionAndRole END — loading set to false");
   }, []);
 
   useEffect(() => {
     hangTimeoutRef.current = setTimeout(() => {
-      console.error("[AUTH_TRACE] AUTH_HANG_DETECTED — 5s timeout fired, forcing loading=false");
-      setAuthError("Authentication check timed out. Please refresh the page.");
+      console.error("[AUTH_TRACE] AUTH_HANG_DETECTED — 12s timeout fired, forcing loading=false (session might be stale, letting user see the page)");
       setLoading(false);
-    }, 5000);
-    console.log("[AUTH_TRACE] hangTimeout set for 5000ms");
+    }, 12000);
+    console.log("[AUTH_TRACE] hangTimeout set for 12000ms — session will be checked on next navigation if still null");
 
     loadSessionAndRole().finally(() => {
       if (hangTimeoutRef.current) {
@@ -115,6 +125,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: sub } = getSupabase().auth.onAuthStateChange(async (event: string, nextSession: Session | null) => {
       console.log("[AUTH_TRACE] onAuthStateChange fired", { event, hasSession: !!nextSession });
+
+      if (event === 'TOKEN_REFRESHED') {
+        console.log("[AUTH_TRACE] Token refreshed — session is still valid");
+      }
+
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setUser(null);
+        setPermissionRole(null);
+        return;
+      }
 
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
