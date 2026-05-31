@@ -4,8 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "ensure-ast-grep": "node scripts/ensure-ast-grep.js",
-    "prebuild": "node scripts/ensure-ast-grep.js",
     "build": "opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint",
@@ -14,7 +12,6 @@
   },
   "dependencies": {
     "@heroui/react": "^3.0.5",
-    "@opennextjs/cloudflare": "^1.19.11",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-switch": "^1.2.6",
@@ -35,6 +32,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.19.11",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
