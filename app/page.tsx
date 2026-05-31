@@ -6,8 +6,9 @@ export default function RootIndexRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    // Forward root landing page hit indices straight into our layout dashboard engine path
+    console.log("[ROUTE_TRACE] RootIndexRedirect useEffect START — pushing to /dashboard");
     router.push('/dashboard');
+    console.log("[ROUTE_TRACE] RootIndexRedirect useEffect END — push called");
   }, [router]);
 
   return (

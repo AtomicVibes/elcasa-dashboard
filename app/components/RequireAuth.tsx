@@ -9,8 +9,10 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading, authError } = useAuth();
 
   useEffect(() => {
+    console.log("[REQUIRE_AUTH_TRACE] useEffect", { loading, hasSession: !!session, authError });
     if (loading) return;
     if (!session && !authError) {
+      console.log("[REQUIRE_AUTH_TRACE] No session — redirecting to /auth");
       router.replace("/auth");
     }
   }, [loading, session, authError, router]);
