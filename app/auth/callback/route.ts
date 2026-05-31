@@ -7,8 +7,13 @@ function serializeCookie(
   value: string,
   maxAge: number,
 ): string {
-  let c = `${name}=${encodeURIComponent(value)}; Path=/; SameSite=Lax; Secure; HttpOnly; Max-Age=${maxAge}`;
-  return c;
+  // @supabase/ssr 0.10 chunker.js passes raw (un-encoded) values to setAll.
+  // encodeURIComponent is needed here for safe cookie storage.
+  return `${name}=${encodeURIComponent(value)}; Path=/; SameSite=Lax; Secure; HttpOnly; Max-Age=${maxAge}`;
+}
+
+function redirectHtml(destination: string): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Redirecting...</title><meta http-equiv="refresh" content="0;url=${destination}"><script>window.location.href=${JSON.stringify(destination)}</script></head><body></body></html>`;
 }
 
 export async function GET(request: NextRequest) {
@@ -35,7 +40,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${requestUrl.origin}/auth?error=no_code`);
   }
 
-  const response = NextResponse.redirect(`${requestUrl.origin}/dashboard`);
+  // ── Use a 200 OK + JS redirect body instead of NextResponse.redirect() ──
+  // Cloudflare Workers (via OpenNext) does not reliably flush Set-Cookie
+  // headers on redirect responses.  A 200 OK response guarantees the
+  // browser processes the auth cookies before navigating to /dashboard.
+  const destination = `${requestUrl.origin}/dashboard`;
+  const body = redirectHtml(destination);
+  const response = new NextResponse(body, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -55,10 +69,6 @@ export async function GET(request: NextRequest) {
         })));
 
         for (const { name, value, options } of cookiesToSet) {
-          // ── FORCE cookie persistence via raw Set-Cookie header ──────────
-          // NextResponse.cookies.set() on a 307 redirect may not serialize
-          // correctly on Cloudflare Workers.  We write the header directly
-          // to guarantee the browser receives it.
           const maxAge = options?.maxAge ?? 60 * 60 * 24 * 365;
           response.headers.append(
             'Set-Cookie',
@@ -97,40 +107,12 @@ export async function GET(request: NextRequest) {
       duration: `${exchangeDuration}ms`,
     });
 
-    // ── VERIFY: Read back the session cookie to confirm it was materialised ──
-    console.log('[AuthCallback] getSession() after exchange START');
-    const sessionStart = Date.now();
-    const { data: { session }, error: sessionError } =
-      await supabase.auth.getSession();
-    const sessionDuration = Date.now() - sessionStart;
-    console.log('[AuthCallback] getSession() after exchange', {
-      hasSession: !!session,
-      userId: session?.user?.id ?? null,
-      email: session?.user?.email ?? null,
-      accessTokenPreview: session?.access_token
-        ? `${session.access_token.slice(0, 16)}...`
-        : null,
-      refreshTokenPreview: session?.refresh_token
-        ? `${session.refresh_token.slice(0, 8)}...`
-        : null,
-      expiresIn: session?.expires_in ?? null,
-      duration: `${sessionDuration}ms`,
-      error: sessionError?.message ?? null,
-    });
-
-    if (!session) {
-      console.error('[AuthCallback] No session materialised after code exchange', {
-        sessionError: sessionError?.message,
-      });
-      return NextResponse.redirect(`${requestUrl.origin}/auth?error=session_not_created`);
-    }
-
-    // ── VERIFY: Confirm Set-Cookie headers are on the response ──
+    // ── LOG: Confirm Set-Cookie headers set on the 200 response ──
     const setCookieHeaders = response.headers.getSetCookie?.() ?? [];
     const allSetCookie = response.headers.get('Set-Cookie') ?? '';
-    console.log('[AuthCallback] Set-Cookie on response', {
+    console.log('[AuthCallback] Set-Cookie on 200 response', {
       rawHeaderLength: allSetCookie.length,
-      rawHeaderPreview: `${allSetCookie.slice(0, 120)}...`,
+      rawHeaderPreview: `${allSetCookie.slice(0, 200)}...`,
       numHeaders: setCookieHeaders.length,
       cookies: setCookieHeaders.map(h => h.split(';')[0]),
     });
@@ -143,6 +125,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${requestUrl.origin}/auth?error=oauth_exception`);
   }
 
-  console.log('[AuthCallback] EXIT — redirecting to /dashboard');
+  console.log('[AuthCallback] EXIT — returning 200 with JS redirect to /dashboard');
   return response;
 }
