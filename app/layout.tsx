@@ -5,6 +5,7 @@ import './globals.css';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { GlobalThemeProvider } from '@/components/theme-provider';
+import { AuthHeartbeat } from '@/components/auth-heartbeat';
 import type { TranslationLanguage } from '@/constants/translations';
 
 export const metadata = {
@@ -33,7 +34,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="antialiased transition-colors duration-500">
         <GlobalThemeProvider>
           <AuthProvider>
-            <LanguageProvider initialLanguage={initialLanguage}>{children}</LanguageProvider>
+            <LanguageProvider initialLanguage={initialLanguage}>
+              {children}
+              <AuthHeartbeat />
+            </LanguageProvider>
           </AuthProvider>
         </GlobalThemeProvider>
         <Toaster position="top-right" reverseOrder={false} />

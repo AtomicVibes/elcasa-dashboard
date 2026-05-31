@@ -11,6 +11,7 @@ import React, {
 import type { Session, User } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabase } from "@/app/lib/supabase";
+import { authManager } from "@/lib/auth/auth-manager";
 
 export type PermissionRole =
   | "SUPER_ADMIN"
@@ -47,13 +48,13 @@ async function fetchPermissionRole(userId: string): Promise<PermissionRole> {
       .maybeSingle();
 
     if (error) {
-      console.error("[Database Schema Sync Error]:", error);
+      await authManager.handleError(error, "fetchPermissionRole");
       return "USER";
     }
 
     return (data?.permissionRole as PermissionRole | undefined) ?? "USER";
   } catch (error) {
-    console.error("[Database Schema Sync Error]:", error);
+    await authManager.handleError(error, "fetchPermissionRole");
     return "USER";
   }
 }
@@ -66,10 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadSessionAndRole = useCallback(async () => {
     setLoading(true);
+
     const { data, error } = await getSupabase().auth.getSession();
+
     if (error) {
-      // eslint-disable-next-line no-console
-      console.error("getSession error:", error);
+      await authManager.handleError(error, "loadSession");
     }
 
     const nextSession = data.session ?? null;
@@ -90,7 +92,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadSessionAndRole();
 
     const { data: sub } = getSupabase().auth.onAuthStateChange(async (_event: string, nextSession: Session | null) => {
-
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
 
@@ -109,7 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async ({ email, password }: { email: string; password: string }) => {
     const { error } = await getSupabase().auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    if (error) {
+      const authErr = authManager.classifyError(error);
+      // Only throw session_expired/policy — let the manager redirect
+      if (authErr.category === 'session_expired' || authErr.category === 'policy') {
+        await authManager.handleError(error, 'signIn');
+      }
+      throw error;
+    }
   }, []);
 
   const signUp = useCallback(
@@ -124,8 +132,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       phoneNumber: string;
       password: string;
     }) => {
-      // We rely on DB trigger to create profiles row on signup.
-      // But we still store full_name/phone_number for convenience if trigger isn't set for them.
       const { data, error } = await getSupabase().auth.signUp({
         email,
         password,
@@ -142,19 +148,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userId = data.user?.id;
       if (!userId) return { userId: "" };
 
-      // Ensure profiles has default permissionRole; trigger should handle it.
-      // Fetch role after insert.
       const role = await fetchPermissionRole(userId);
       setPermissionRole(role);
 
       return { userId };
     },
-    []
+    [],
   );
 
   const signOut = useCallback(async () => {
     const { error } = await getSupabase().auth.signOut();
-    if (error) throw error;
+    if (error) {
+      const authErr = authManager.classifyError(error);
+      if (authErr.category === 'policy' || authErr.category === 'session_expired') {
+        await authManager.handleError(error, 'signOut');
+        return;
+      }
+      throw error;
+    }
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -168,7 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signOut,
     }),
-    [user, session, permissionRole, loading, signIn, signUp, signOut]
+    [user, session, permissionRole, loading, signIn, signUp, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
