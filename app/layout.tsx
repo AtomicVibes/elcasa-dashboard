@@ -6,6 +6,7 @@ import { LanguageProvider } from '@/context/LanguageContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { GlobalThemeProvider } from '@/components/theme-provider';
 import { AuthHeartbeat } from '@/components/auth-heartbeat';
+import { THEME_INIT_SCRIPT } from '@/app/theme-init';
 import type { TranslationLanguage } from '@/constants/translations';
 
 export const metadata = {

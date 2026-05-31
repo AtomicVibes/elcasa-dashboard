@@ -72,18 +72,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadSessionAndRole = useCallback(async () => {
     setLoading(true);
 
-    const { data, error } = await getSupabase().auth.getSession();
-
-    if (error) {
-      await authManager.handleError(error, "loadSession");
-    }
-
+    try {
       console.log("[AUTH_TRACE] BEFORE getSupabase().auth.getSession()");
       const { data, error } = await getSupabase().auth.getSession();
       console.log("[AUTH_TRACE] AFTER getSupabase().auth.getSession()", { hasSession: !!data?.session, error });
+
       if (error) {
         console.error("[AUTH_TRACE] getSession error:", error);
         setAuthError(`Session check failed: ${error.message}`);
+        await authManager.handleError(error, "loadSession");
       }
 
       const nextSession = data.session ?? null;
