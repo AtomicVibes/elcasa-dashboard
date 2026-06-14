@@ -43,6 +43,11 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
+  "config": {
+    "npm": {
+      "supported-platforms": ["darwin", "linux", "win32"]
+    }
+  },
   "engines": {
     "node": "22.x"
   },
