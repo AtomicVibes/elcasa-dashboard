@@ -3,7 +3,6 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { useLanguage } from '@/context/LanguageContext';
-import { getSupabase } from '@/app/lib/supabase';
 import toast from 'react-hot-toast';
 
 export default function NewCaseCreationForm() {
@@ -25,26 +24,31 @@ export default function NewCaseCreationForm() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await getSupabase()
-      .from('renovation_requests')
-      .insert([
-        {
-          client_name: form.name,
+    try {
+      const res = await fetch('/api/renovation-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName: form.name,
           address: `${form.via}, ${form.citta}`,
-          work_type: form.type,
-          cleaned_description: form.desc,
+          workType: form.type,
+          cleanedDescription: form.desc,
           status: 'Pending Review',
-          budget_feasibility: 'Realistic',
-          estimated_budget: '0'
-        }
-      ]);
+          budgetFeasibility: 'Realistic',
+          estimatedBudget: '0',
+        }),
+      });
 
-    setLoading(false);
-    if (error) {
-      toast.error(`Database rejected entry stream: ${error.message}`);
-    } else {
-      router.push('/dashboard/requests');
+      if (res.ok) {
+        router.push('/dashboard/requests');
+      } else {
+        const errData = await res.json();
+        toast.error(`Database rejected entry stream: ${errData.error}`);
+      }
+    } catch {
+      toast.error('Failed to create request');
     }
+    setLoading(false);
   };
 
   return (

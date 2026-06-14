@@ -1,41 +1,59 @@
 import { NextResponse } from 'next/server';
-import { getSupabase } from '@/app/lib/supabase';
+import { getDb } from '@/app/lib/db';
+import { log, logError } from '@/app/lib/logger';
 import { serializeJob } from '@/app/lib/types';
 import type { JobDTO } from '@/app/lib/types';
 
 export async function GET(request: Request) {
   try {
-    const supabase = getSupabase();
-    const url       = new URL(request.url);
-    const status    = url.searchParams.get('status');
-    const customer  = url.searchParams.get('customerId');
+    const sql = getDb();
+    const url      = new URL(request.url);
+    const status   = url.searchParams.get('status');
+    const customer = url.searchParams.get('customerId');
 
-    let query = supabase
-      .from('jobs')
-      .select(`
-        *,
-        customer:customer_id (
-          id, full_name, email
-        ),
-        assignees:job_assignees (
-          id,
-          user_id,
-          role_on_job,
-          user:user_id (
-            id, full_name, email
-          )
-        )
-      `)
-      .order('created_at', { ascending: false });
+    let query = `
+      SELECT
+        j.*,
+        row_to_json(c.*) AS customer,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', ja.id,
+              'user_id', ja.user_id,
+              'role_on_job', ja.role_on_job,
+              'user', CASE WHEN u.id IS NOT NULL THEN json_build_object('id', u.id, 'full_name', u.full_name, 'email', u.email) ELSE NULL END
+            )
+          ) FILTER (WHERE ja.id IS NOT NULL),
+          '[]'::json
+        ) AS assignees
+      FROM jobs j
+      LEFT JOIN customers c ON c.id = j.customer_id
+      LEFT JOIN job_assignees ja ON ja.job_id = j.id
+      LEFT JOIN users u ON u.id = ja.user_id
+    `;
 
-    if (status)   query = query.eq('status', status);
-    if (customer) query = query.eq('customer_id', Number(customer));
+    const conditions: string[] = [];
+    const params: any[] = [];
 
-    const { data: jobs, error } = await query;
+    if (status) {
+      conditions.push(`j.status = $${params.length + 1}`);
+      params.push(status);
+    }
+    if (customer) {
+      conditions.push(`j.customer_id = $${params.length + 1}`);
+      params.push(Number(customer));
+    }
 
-    if (error) throw error;
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
 
-    const payload: JobDTO[] = ((jobs as any[]) || []).map((j: any) => ({
+    query += ' GROUP BY j.id, c.id ORDER BY j.created_at DESC';
+
+    const rows = await sql.query(query, params);
+    log('jobs.list', { count: rows?.length, status, customer });
+
+    const payload: JobDTO[] = (rows || []).map((j: any) => ({
       ...serializeJob(j, false),
       assignees: (j.assignees || []).map((a: any) => ({
         id:       a.id,
@@ -47,39 +65,29 @@ export async function GET(request: Request) {
 
     return NextResponse.json(payload);
   } catch (err) {
-    console.error('[GET /api/jobs]', err);
+    logError('jobs.list.error', err);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabase();
+    const sql = getDb();
     const body = await request.json();
     const { title, description, location, category, budget, expenses, deadline, status, customerId } = body;
 
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 });
 
-    const { data: created, error } = await supabase
-      .from('jobs')
-      .insert({
-        title,
-        description: description ?? null,
-        location: location ?? null,
-        category: category ?? null,
-        budget:    budget    ? String(budget)  : null,
-        expenses:  expenses  ? String(expenses) : null,
-        deadline:  deadline  ?? null,
-        status:    status    ?? 'pending',
-        customer_id: customerId ?? null,
-      })
-      .select('*')
-      .single();
+    const created = await sql`
+      INSERT INTO jobs (title, description, location, category, budget, expenses, deadline, status, customer_id)
+      VALUES (${title}, ${description ?? null}, ${location ?? null}, ${category ?? null}, ${budget ? String(budget) : null}, ${expenses ? String(expenses) : null}, ${deadline ?? null}, ${status ?? 'pending'}, ${customerId ?? null})
+      RETURNING *
+    `;
 
-    if (error) throw error;
-    return NextResponse.json(serializeJob(created), { status: 201 });
+    log('jobs.create', { id: created[0]?.id, title });
+    return NextResponse.json(serializeJob(created[0]), { status: 201 });
   } catch (err) {
-    console.error('[POST /api/jobs]', err);
+    logError('jobs.create.error', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

@@ -29,24 +29,14 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const AUTH_PROFILES_TABLE = "profiles";
+
 
 async function fetchPermissionRole(userId: string): Promise<PermissionRole> {
   try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) return "USER";
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const { data, error } = await supabase
-      .from(AUTH_PROFILES_TABLE)
-      .select("permissionRole")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (error) return "USER";
-    return (data?.permissionRole as PermissionRole | undefined) ?? "USER";
+    const res = await fetch(`/api/users/${userId}`);
+    if (!res.ok) return "USER";
+    const data = await res.json();
+    return (data.permissionRole as PermissionRole | undefined) ?? "USER";
   } catch {
     return "USER";
   }

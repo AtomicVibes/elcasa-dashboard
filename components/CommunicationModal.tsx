@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { X, Send, Mic, Square, Play, Trash2, MessageSquare, Check, Loader2 } from 'lucide-react';
-import { getSupabase } from '@/app/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
 type Tab = 'text' | 'audio';
@@ -157,38 +156,42 @@ export default function CommunicationModal({
           setSending(false);
           return;
         }
-        const { error: insertError } = await getSupabase().from('messages').insert({
-          sender_id: user.id,
-          recipient_id: recipientId ?? null,
-          recipient_name: recipientName,
-          project_id: projectId ?? null,
-          content: message.trim(),
-          type: 'text',
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            senderId: user.id,
+            recipientId: recipientId ?? null,
+            recipientName,
+            projectId: projectId ?? null,
+            content: message.trim(),
+            type: 'text',
+          }),
         });
-        if (insertError) throw insertError;
+        if (!res.ok) throw new Error('Failed to send message');
       } else {
         if (!recordedBlob) {
           setError('Please record an audio message first.');
           setSending(false);
           return;
         }
-        const fileName = `audio/${user.id}/${Date.now()}.webm`;
-        const { error: uploadError } = await getSupabase().storage
-          .from('audio-messages')
-          .upload(fileName, recordedBlob, { contentType: 'audio/webm' });
-        if (uploadError) throw uploadError;
+        // TODO: Replace with Cloudflare R2 / S3 upload
+        // For now, store a placeholder URL
+        const audioUrl = `/placeholder/audio/${Date.now()}.webm`;
 
-        const { data: urlData } = getSupabase().storage.from('audio-messages').getPublicUrl(fileName);
-
-        const { error: insertError } = await getSupabase().from('messages').insert({
-          sender_id: user.id,
-          recipient_id: recipientId ?? null,
-          recipient_name: recipientName,
-          project_id: projectId ?? null,
-          content: urlData?.publicUrl ?? fileName,
-          type: 'audio',
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            senderId: user.id,
+            recipientId: recipientId ?? null,
+            recipientName,
+            projectId: projectId ?? null,
+            content: audioUrl,
+            type: 'audio',
+          }),
         });
-        if (insertError) throw insertError;
+        if (!res.ok) throw new Error('Failed to send message');
       }
 
       setSent(true);

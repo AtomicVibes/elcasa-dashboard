@@ -3,7 +3,6 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { useLanguage } from '@/context/LanguageContext';
-import { getSupabase } from '@/app/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface FullRequest {
@@ -32,12 +31,15 @@ export default function RequestDetailView({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     async function loadItem() {
-      const { data: item } = await getSupabase()
-        .from('renovation_requests')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (item) setData(item);
+      try {
+        const res = await fetch(`/api/renovation-requests/${id}`);
+        if (res.ok) {
+          const item = await res.json();
+          setData(item);
+        }
+      } catch {
+        setData(null);
+      }
       setLoading(false);
     }
     loadItem();
@@ -45,17 +47,23 @@ export default function RequestDetailView({ params }: { params: Promise<{ id: st
 
   const handleApproveToCase = async () => {
     setActionLoading(true);
-    // Simulating approval status mutation cascade
-    const { error } = await getSupabase()
-      .from('renovation_requests')
-      .update({ status: 'Approved' })
-      .eq('id', id);
+    try {
+      const res = await fetch(`/api/renovation-requests/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Approved' }),
+      });
 
-    setActionLoading(false);
-    if (!error) {
-      toast.success(lang === 'EN' ? 'Case file successfully created!' : 'Fascicolo creato con successo!');
-      router.push('/dashboard/requests');
+      if (res.ok) {
+        toast.success(lang === 'EN' ? 'Case file successfully created!' : 'Fascicolo creato con successo!');
+        router.push('/dashboard/requests');
+      } else {
+        toast.error('Failed to approve request');
+      }
+    } catch {
+      toast.error('Failed to approve request');
     }
+    setActionLoading(false);
   };
 
   if (loading) {

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Sidebar from '@/app/components/Sidebar';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
-import { getSupabase } from '@/app/lib/supabase';
 import { Settings, User, Sun, Moon, Monitor, Globe, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
@@ -35,18 +34,14 @@ export default function SettingsDashboardPage() {
 
   async function loadProfile() {
     if (!user) return;
-    const { data, error } = await getSupabase()
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('[Profile Load Error]:', error);
-    }
-
-    if (data?.full_name) {
-      setCustomUsername(data.full_name);
+    try {
+      const res = await fetch(`/api/users/${user.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.fullName) setCustomUsername(data.fullName);
+      }
+    } catch (err) {
+      console.error('[Profile Load Error]:', err);
     }
     setProfileLoaded(true);
   }
@@ -55,14 +50,13 @@ export default function SettingsDashboardPage() {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await getSupabase()
-        .from('profiles')
-        .upsert(
-          { id: user.id, full_name: customUsername.trim() },
-          { onConflict: 'id' }
-        );
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: customUsername.trim() }),
+      });
 
-      if (error) throw error;
+      if (!res.ok) throw new Error('Update failed');
       toast.success('Profile updated successfully!');
     } catch (error) {
       console.error('[Settings Profile Sync Error]:', error);

@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { Upload, Loader2, ImageIcon, FileIcon } from 'lucide-react';
-import { getSupabase } from '@/app/lib/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 
 type UploadedAsset = {
@@ -10,8 +9,6 @@ type UploadedAsset = {
   url: string;
   timestamp: number;
 };
-
-const STORAGE_BUCKET = 'Photos';
 
 function isImageFile(name: string): boolean {
   return /\.(jpg|jpeg|png|gif|webp|svg|bmp|avif|heic)$/i.test(name);
@@ -27,26 +24,13 @@ export default function MediaUploadSection() {
   const uploadFile = useCallback(async (file: File) => {
     setUploading(true);
     try {
-      const ext = file.name.slice(file.name.lastIndexOf('.'));
-      const uniqueName = `uploads/${crypto.randomUUID()}${ext}`;
-
-      const { error: uploadError } = await getSupabase().storage
-        .from(STORAGE_BUCKET)
-        .upload(uniqueName, file, {
-          contentType: file.type || 'image/jpeg',
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = getSupabase().storage
-        .from(STORAGE_BUCKET)
-        .getPublicUrl(uniqueName);
+      // TODO: Replace with Cloudflare R2 / S3 upload
+      // For now, create a local object URL
+      const url = URL.createObjectURL(file);
 
       const newAsset: UploadedAsset = {
         name: file.name,
-        url: urlData.publicUrl,
+        url,
         timestamp: Date.now(),
       };
 

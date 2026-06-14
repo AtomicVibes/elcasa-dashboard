@@ -1,32 +1,36 @@
 import { NextResponse } from 'next/server';
-import { getSupabase } from '@/app/lib/supabase';
+import { getDb } from '@/app/lib/db';
+import { log, logError } from '@/app/lib/logger';
 import { serializeJob } from '@/app/lib/types';
 import type { JobDTO } from '@/app/lib/types';
 
 async function getJobWithAssignees(jobId: number): Promise<any | null> {
-  const supabase = getSupabase();
+  const sql = getDb();
 
-  const { data: job, error } = await supabase
-    .from('jobs')
-    .select(`
-      *,
-      customer:customer_id (
-        id, full_name, email
-      ),
-      assignees:job_assignees (
-        id,
-        user_id,
-        role_on_job,
-        user:user_id (
-          id, full_name, email
-        )
-      )
-    `)
-    .eq('id', jobId)
-    .single();
+  const rows = await sql`
+    SELECT
+      j.*,
+      row_to_json(c.*) AS customer,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', ja.id,
+            'user_id', ja.user_id,
+            'role_on_job', ja.role_on_job,
+            'user', CASE WHEN u.id IS NOT NULL THEN json_build_object('id', u.id, 'full_name', u.full_name, 'email', u.email) ELSE NULL END
+          )
+        ) FILTER (WHERE ja.id IS NOT NULL),
+        '[]'::json
+      ) AS assignees
+    FROM jobs j
+    LEFT JOIN customers c ON c.id = j.customer_id
+    LEFT JOIN job_assignees ja ON ja.job_id = j.id
+    LEFT JOIN users u ON u.id = ja.user_id
+    WHERE j.id = ${jobId}
+    GROUP BY j.id, c.id
+  `;
 
-  if (error || !job) return null;
-  return job;
+  return rows.length > 0 ? rows[0] : null;
 }
 
 export async function GET(
@@ -37,9 +41,10 @@ export async function GET(
     const { id } = await params;
     const data   = await getJobWithAssignees(Number(id));
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    log('jobs.get', { id });
     return NextResponse.json<JobDTO>(serializeJob(data) as JobDTO);
   } catch (err) {
-    console.error('[GET /api/jobs/:id]', err);
+    logError('jobs.get.error', err);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
@@ -49,37 +54,41 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = getSupabase();
+    const sql = getDb();
     const { id } = await params;
-    const body    = await request.json();
+    const body  = await request.json();
 
     const allowed = ['title','description','location','category','budget','expenses','deadline','status','customerId'] as const;
-    const updates: Record<string, any> = {};
+    const camelToSnake: Record<string, string> = { customerId: 'customer_id' };
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
     for (const k of Object.keys(body)) {
       if ((allowed as readonly string[]).includes(k as any)) {
-        const col = k === 'customerId' ? 'customer_id' : k;
-        updates[col] = body[k];
+        const col = camelToSnake[k] ?? k;
+        setClauses.push(`${col} = $${idx++}`);
+        values.push(body[k]);
       }
     }
-    if (Object.keys(updates).length === 0) {
+
+    if (setClauses.length === 0) {
       return NextResponse.json({ error: 'No valid update fields' }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from('jobs')
-      .update(updates)
-      .eq('id', Number(id));
-
-    if (error) {
-      if (error.code === 'PGRST116') return NextResponse.json({ error: 'Not found' }, { status: 404 });
-      throw error;
-    }
+    values.push(Number(id));
+    await sql.query(
+      `UPDATE jobs SET ${setClauses.join(', ')} WHERE id = $${idx}`,
+      values,
+    );
 
     const data = await getJobWithAssignees(Number(id));
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    log('jobs.update', { id });
     return NextResponse.json<JobDTO>(serializeJob(data) as JobDTO);
   } catch (err) {
-    console.error('[PATCH /api/jobs/:id]', err);
+    logError('jobs.update.error', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
@@ -89,19 +98,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = getSupabase();
+    const sql = getDb();
     const { id } = await params;
 
-    const { error, count } = await supabase
-      .from('jobs')
-      .delete({ count: 'exact' })
-      .eq('id', Number(id));
+    const result = await sql`DELETE FROM jobs WHERE id = ${Number(id)} RETURNING id`;
+    if (result.length === 0) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
 
-    if (error) throw error;
-    if (count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    log('jobs.delete', { id });
     return NextResponse.json({ deleted: true });
   } catch (err) {
-    console.error('[DELETE /api/jobs/:id]', err);
+    logError('jobs.delete.error', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

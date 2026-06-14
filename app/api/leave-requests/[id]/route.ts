@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getSupabase } from '@/app/lib/supabase';
+import { getDb } from '@/app/lib/db';
+import { log, logError } from '@/app/lib/logger';
 import { serializeLeave } from '@/app/lib/types';
 import type { LeaveRequestDTO } from '@/app/lib/types';
 
@@ -8,23 +9,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = getSupabase();
+    const sql = getDb();
     const { id } = await params;
 
-    const { data: row, error } = await supabase
-      .from('leave_requests')
-      .select('*')
-      .eq('id', Number(id))
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') return NextResponse.json({ error: 'Not found' }, { status: 404 });
-      throw error;
+    const rows = await sql`SELECT * FROM leave_requests WHERE id = ${Number(id)}`;
+    if (rows.length === 0) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    return NextResponse.json<LeaveRequestDTO>(serializeLeave(row));
+    log('leave.get', { id });
+    return NextResponse.json<LeaveRequestDTO>(serializeLeave(rows[0]));
   } catch (err) {
-    console.error('[GET /api/leave-requests/:id]', err);
+    logError('leave.get.error', err);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
@@ -34,42 +30,48 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = getSupabase();
+    const sql = getDb();
     const { id } = await params;
-    const body    = await request.json();
+    const body  = await request.json();
 
     const allowed = ['status','reviewNote','reason','startDate','endDate'] as const;
-    const updates: Record<string, any> = {};
     const snakeMap: Record<string, string> = { reviewNote: 'review_note', startDate: 'start_date', endDate: 'end_date' };
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
     for (const k of Object.keys(body)) {
       if ((allowed as readonly string[]).includes(k as any)) {
-        updates[snakeMap[k as string] ?? k] = body[k];
+        const col = snakeMap[k] ?? k;
+        setClauses.push(`${col} = $${idx++}`);
+        values.push(body[k]);
       }
     }
 
-    if (!updates.status) {
+    if (!setClauses.find(c => c.startsWith('status'))) {
       return NextResponse.json({ error: 'status is required' }, { status: 400 });
     }
 
-    if (!['pending','approved','denied'].includes(updates.status)) {
+    const statusVal = values[setClauses.findIndex(c => c.startsWith('status'))];
+    if (!['pending','approved','denied'].includes(statusVal)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    const { data: updated, error } = await supabase
-      .from('leave_requests')
-      .update(updates)
-      .eq('id', Number(id))
-      .select('*')
-      .single();
+    values.push(Number(id));
+    const rows = await sql.query(
+      `UPDATE leave_requests SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values,
+    );
 
-    if (error) {
-      if (error.code === 'PGRST116') return NextResponse.json({ error: 'Not found' }, { status: 404 });
-      throw error;
+    if (rows.length === 0) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    return NextResponse.json<LeaveRequestDTO>(serializeLeave(updated));
+    log('leave.update', { id, status: body.status });
+    return NextResponse.json<LeaveRequestDTO>(serializeLeave(rows[0]));
   } catch (err) {
-    console.error('[PATCH /api/leave-requests/:id]', err);
+    logError('leave.update.error', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
@@ -79,19 +81,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = getSupabase();
+    const sql = getDb();
     const { id } = await params;
 
-    const { error, count } = await supabase
-      .from('leave_requests')
-      .delete({ count: 'exact' })
-      .eq('id', Number(id));
+    const result = await sql`DELETE FROM leave_requests WHERE id = ${Number(id)} RETURNING id`;
+    if (result.length === 0) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
 
-    if (error) throw error;
-    if (count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    log('leave.delete', { id });
     return NextResponse.json({ deleted: true });
   } catch (err) {
-    console.error('[DELETE /api/leave-requests/:id]', err);
+    logError('leave.delete.error', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

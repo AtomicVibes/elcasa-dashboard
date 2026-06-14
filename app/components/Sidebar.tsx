@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, FolderOpen, Image, Clock, Users, Briefcase, Settings, LogOut, Menu, X, ChevronLeft, ChevronRight, CheckSquare2, CalendarClock } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import { getSupabase } from '@/app/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -18,7 +17,6 @@ export default function Sidebar() {
   const router = useRouter();
 
   const { user, loading } = useAuth();
-  const [profileName, setProfileName] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -38,23 +36,9 @@ export default function Sidebar() {
     [t]
   );
 
-  useEffect(() => {
-    if (user?.id) {
-      getSupabase()
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (error) console.error('[Sidebar Profile Load Error]:', error);
-          if (data?.full_name) setProfileName(data.full_name);
-        });
-    }
-  }, [user?.id]);
-
   const displayName = loading
     ? ''
-    : profileName || user?.name || user?.email?.split('@')[0] || '';
+    : user?.name || user?.email?.split('@')[0] || '';
   const displayEmail = loading ? '' : user?.email || '';
   const avatarLetter = displayName ? displayName.charAt(0).toUpperCase() : 'A';
 

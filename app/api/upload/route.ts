@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/server';
-import { uploadToSupabase } from '@/app/lib/supabaseStorage';
+import { log, logError } from '@/app/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,11 +20,19 @@ export async function POST(request: NextRequest) {
       formData.get('folder')?.toString() ??
       'projects';
 
-    const publicUrl = await uploadToSupabase(buf, file.name, file.type || 'image/jpeg', pathPrefix);
+    // TODO: Replace with Cloudflare R2 / S3 / Neon BLOB storage
+    // Currently no storage backend is configured.
+    // Save file metadata to DB:
+    // const sql = getDb();
+    // await sql`INSERT INTO files (name, size, type, path, user_id) VALUES (${file.name}, ${buf.length}, ${file.type}, ${pathPrefix + '/' + file.name}, ${session.user.id})`;
 
-    return NextResponse.json({ url: publicUrl });
+    log('upload', { fileName: file.name, pathPrefix, userId: session.user.id });
+    return NextResponse.json({
+      url: `/placeholder/${pathPrefix}/${file.name}`,
+      note: 'Storage backend not configured. File metadata not persisted.',
+    });
   } catch (err) {
-    console.error('[POST /api/upload]', err);
+    logError('upload.error', err);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }
 }

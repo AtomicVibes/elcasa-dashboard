@@ -1,28 +1,25 @@
 import { NextResponse } from 'next/server';
-import { getSupabase } from '@/app/lib/supabase';
+import { getDb } from '@/app/lib/db';
+import { log, logError } from '@/app/lib/logger';
 import { serializeUser } from '@/app/lib/types';
 import type { UserDTO } from '@/app/lib/types';
 
-export async function GET(_req: Request) {
+export async function GET() {
   try {
-    const supabase = getSupabase();
-    const { data: rows, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: true });
-
-    if (error) throw error;
+    const sql = getDb();
+    const rows = await sql`SELECT * FROM users ORDER BY created_at ASC`;
     const payload = (rows || []).map((r: any) => serializeUser(r));
+    log('users.list', { count: payload.length });
     return NextResponse.json<UserDTO[]>(payload);
   } catch (err) {
-    console.error('[GET /api/users]', err);
+    logError('users.list.error', err);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabase();
+    const sql = getDb();
     const body = await request.json();
     const {
       email,
@@ -45,34 +42,19 @@ export async function POST(request: Request) {
     const bcryptjs = await import('bcryptjs');
     const passwordHash = password ? bcryptjs.hashSync(password, 12) : null;
 
-    const { data: created, error } = await supabase
-      .from('users')
-      .insert({
-        email,
-        full_name:        fullName,
-        phone:            phone ?? null,
-        construction_function: constructionFunction ?? null,
-        permission_role:  permissionRole ?? 'view_only',
-        avatar_color:     avatarColor ?? '#FFB800',
-        submit_photos:    Boolean(submitPhotos),
-        add_notes:        Boolean(addNotes),
-        upload_invoices:  Boolean(uploadInvoices),
-        upload_blueprints:Boolean(uploadBlueprints),
-        password_hash:    passwordHash,
-      })
-      .select('*')
-      .single();
+    const created = await sql`
+      INSERT INTO users (email, full_name, phone, construction_function, permission_role, avatar_color, submit_photos, add_notes, upload_invoices, upload_blueprints, password_hash)
+      VALUES (${email}, ${fullName}, ${phone ?? null}, ${constructionFunction ?? null}, ${permissionRole ?? 'view_only'}, ${avatarColor ?? '#FFB800'}, ${Boolean(submitPhotos)}, ${Boolean(addNotes)}, ${Boolean(uploadInvoices)}, ${Boolean(uploadBlueprints)}, ${passwordHash})
+      RETURNING *
+    `;
 
-    if (error) {
-      if (error.code === '23505') {
-        return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
-      }
-      throw error;
+    log('users.create', { id: created[0]?.id, email });
+    return NextResponse.json<UserDTO>(serializeUser(created[0]), { status: 201 });
+  } catch (err: any) {
+    if (err?.code === '23505') {
+      return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
     }
-
-    return NextResponse.json<UserDTO>(serializeUser(created), { status: 201 });
-  } catch (err) {
-    console.error('[POST /api/users]', err);
+    logError('users.create.error', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

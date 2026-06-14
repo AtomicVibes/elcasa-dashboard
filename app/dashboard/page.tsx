@@ -6,8 +6,6 @@ import Sidebar from '@/app/components/Sidebar';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
 
-import { getSupabase } from '@/app/lib/supabase';
-
 import { RequireAuth } from "@/app/components/RequireAuth";
 
 export default function AdminDashboard() {
@@ -22,34 +20,24 @@ function AdminDashboardInner() {
 const { language } = useLanguage();
   const lang = language.toUpperCase() as 'EN' | 'IT';
   const { user, loading } = useAuth();
-  const [profileName, setProfileName] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user?.id) {
-      getSupabase()
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (error) console.error('[Dashboard Profile Load Error]:', error);
-          if (data?.full_name) setProfileName(data.full_name);
-        });
-    }
-  }, [user?.id]);
 
   const greetingName = loading
     ? ''
-    : profileName || user?.name || user?.email?.split('@')[0] || '';
+    : user?.name || user?.email?.split('@')[0] || '';
 
   const [totalRequests, setTotalRequests] = useState(0);
 
   useEffect(() => {
     async function getStats() {
-      const { count } = await getSupabase()
-        .from('renovation_requests')
-        .select('*', { count: 'exact', head: true });
-      setTotalRequests(count || 0);
+      try {
+        const res = await fetch('/api/renovation-requests');
+        if (res.ok) {
+          const data = await res.json();
+          setTotalRequests(data.length || 0);
+        }
+      } catch {
+        setTotalRequests(0);
+      }
     }
     getStats();
   }, []);
