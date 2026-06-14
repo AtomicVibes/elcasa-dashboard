@@ -3,7 +3,12 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 function serializeCookie(name: string, value: string, maxAge: number): string {
-  return `${name}=${encodeURIComponent(value)}; Path=/; SameSite=Lax; Secure; HttpOnly; Max-Age=${maxAge}`;
+  const attrs = [`${name}=${encodeURIComponent(value)}; Path=/; SameSite=Lax; Secure; Max-Age=${maxAge}`];
+  // Only refresh-token and code-verifier cookies need HttpOnly.
+  // The access-token cookie must be readable by the browser client
+  // via document.cookie so createBrowserClient can get the session.
+  if (/refresh.token|code.verifier/i.test(name)) attrs.push('HttpOnly');
+  return attrs.join('; ');
 }
 
 function redirectHtml(destination: string): string {
