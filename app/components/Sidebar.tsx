@@ -54,7 +54,7 @@ export default function Sidebar() {
 
   const displayName = loading
     ? ''
-    : profileName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || '';
+    : profileName || user?.name || user?.email?.split('@')[0] || '';
   const displayEmail = loading ? '' : user?.email || '';
   const avatarLetter = displayName ? displayName.charAt(0).toUpperCase() : 'A';
 

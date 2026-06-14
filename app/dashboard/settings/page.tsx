@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from '@/app/components/Sidebar';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
+import { getSupabase } from '@/app/lib/supabase';
 import { Settings, User, Sun, Moon, Monitor, Globe, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
@@ -13,7 +14,7 @@ type SettingsTab = 'settings' | 'profile';
 
 export default function SettingsDashboardPage() {
   const { t, language, setLanguage } = useLanguage();
-  const { user, supabase } = useAuth();
+  const { user } = useAuth();
   const { theme, setTheme } = useTheme();
 
   const [mounted, setMounted] = useState(false);
@@ -34,7 +35,7 @@ export default function SettingsDashboardPage() {
 
   async function loadProfile() {
     if (!user) return;
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('profiles')
       .select('full_name')
       .eq('id', user.id)
@@ -54,7 +55,7 @@ export default function SettingsDashboardPage() {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('profiles')
         .upsert(
           { id: user.id, full_name: customUsername.trim() },
@@ -74,7 +75,7 @@ export default function SettingsDashboardPage() {
   if (!mounted) return null;
 
   const userEmail = user?.email ?? '';
-  const googleName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+  const googleName = user?.name || '';
 
   function ProfileField({ label, children }: { label: string; children: React.ReactNode }) {
     return (

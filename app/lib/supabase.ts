@@ -1,4 +1,3 @@
-import { createBrowserClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -14,11 +13,7 @@ export function getSupabase(): SupabaseClient {
     throw new Error('Supabase env vars (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY) not set.');
   }
 
-  if (typeof window !== 'undefined') {
-    client = createBrowserClient(supabaseUrl, supabaseAnonKey);
-  } else {
-    client = createClient(supabaseUrl, supabaseAnonKey);
-  }
+  client = createClient(supabaseUrl, supabaseAnonKey);
 
   return client;
 }

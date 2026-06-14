@@ -40,7 +40,7 @@ const { language } = useLanguage();
 
   const greetingName = loading
     ? ''
-    : profileName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || '';
+    : profileName || user?.name || user?.email?.split('@')[0] || '';
 
   const [totalRequests, setTotalRequests] = useState(0);
 

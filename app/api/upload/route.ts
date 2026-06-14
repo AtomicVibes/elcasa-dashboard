@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabase } from '@/app/lib/supabase';
+import { auth } from '@/lib/auth/server';
 import { uploadToSupabase } from '@/app/lib/supabaseStorage';
 
-// ─── POST /api/upload ────────────────────────────────────────────────────────
-// AuthGate → Supabase Upload wrapper
 export async function POST(request: NextRequest) {
   try {
-    // Authorisation guard
-    const auth    = request.headers.get('authorization');
-    if (!auth || !auth.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized — valid auth token required in Authorization header' }, { status: 401 });
-    }
-    const token = auth.slice('Bearer '.length);
+    const { data: session } = await auth.getSession();
 
-    // Use Supabase Auth to verify the JWT (Cloudflare-compatible)
-    const { data: { user }, error: authError } = await getSupabase().auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid auth token — you must be signed in to load this page' }, { status: 403 });
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized — you must be signed in' }, { status: 401 });
     }
 
     const formData = await request.formData();

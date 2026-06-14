@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useGlobalTheme } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Spinner } from "@/components/ui/spinner";
-import { getSupabase } from "@/app/lib/supabase";
+import { authClient } from "@/lib/auth/client";
 
 export default function ForgotPasswordPage() {
   const { theme } = useGlobalTheme();
@@ -20,8 +20,8 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const { error } = await getSupabase().auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      const { error } = await authClient.forgetPassword.emailOtp({
+        email: email.trim(),
       });
       if (error) throw error;
       setSent(true);

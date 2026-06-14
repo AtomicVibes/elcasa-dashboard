@@ -11,6 +11,7 @@ import { GlobalLoader } from "@/components/global-loader";
 import { Spinner } from "@/components/ui/spinner";
 import { useGlobalTheme } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { authClient } from "@/lib/auth/client";
 
 function Input({
   className,
@@ -24,8 +25,8 @@ function Input({
       type={type}
       className={cn(
         "w-full border rounded-xl px-4 py-3 outline-none transition-all focus:border-[#FFC107] font-semibold",
-        isDark 
-          ? "bg-[#09090b] text-white border-[#27272a] placeholder:text-zinc-600" 
+        isDark
+          ? "bg-[#09090b] text-white border-[#27272a] placeholder:text-zinc-600"
           : "bg-[#fafafa] text-black border-[#d4d4d8] placeholder:text-zinc-400",
         className
       )}
@@ -120,7 +121,7 @@ function getErrorMessage(err: unknown): string {
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn, signUp, loading, authError, supabase } = useAuth();
+  const { loading, authError } = useAuth();
   const { theme } = useGlobalTheme();
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [fullName, setFullName] = useState("");
@@ -133,7 +134,6 @@ export default function AuthPage() {
   const [openTermsModal, setOpenTermsModal] = useState(false);
   const termsTitleId = useId();
 
-  // Explicit dynamic detection fallback if state string isn't sanitized
   const isDark = theme === "dark";
 
   if (loading) {
@@ -188,7 +188,11 @@ export default function AuthPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await signIn({ email: email.trim(), password });
+      const { error } = await authClient.signIn.email({
+        email: email.trim(),
+        password,
+      });
+      if (error) throw error;
       router.push("/dashboard");
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
@@ -209,12 +213,12 @@ export default function AuthPage() {
     }
     setSubmitting(true);
     try {
-      await signUp({
-        fullName: fullName.trim(),
+      const { error } = await authClient.signUp.email({
         email: email.trim(),
-        phoneNumber: phoneNumber.trim(),
         password,
+        name: fullName.trim(),
       });
+      if (error) throw error;
       router.push("/dashboard");
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
@@ -224,13 +228,10 @@ export default function AuthPage() {
   }
 
   async function handleGoogleSignIn() {
-    const { error } = await supabase.auth.signInWithOAuth({
+    await authClient.signIn.social({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      callbackURL: '/dashboard',
     });
-    if (error) toast.error(error.message);
   }
 
   return (
@@ -245,7 +246,7 @@ export default function AuthPage() {
           -webkit-box-shadow: 0 0 0px 1000px ${isDark ? '#09090b' : '#ffffff'} inset !important;
         }
       `}} />
-      
+
       <div className="absolute top-6 right-6 z-50">
         <ThemeToggle />
       </div>
@@ -399,8 +400,8 @@ export default function AuthPage() {
             type="submit"
             className={cn(
               "w-full py-3 px-4 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 text-white",
-              activeTab === 'login' || isChecked 
-                ? "bg-[#F9A825] hover:bg-[#FFC107]" 
+              activeTab === 'login' || isChecked
+                ? "bg-[#F9A825] hover:bg-[#FFC107]"
                 : "bg-[#FFAB00] text-white/90"
             )}
           >

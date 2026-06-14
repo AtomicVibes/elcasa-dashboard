@@ -12,10 +12,10 @@
   },
   "dependencies": {
     "@heroui/react": "^3.0.5",
+    "@neondatabase/auth": "^0.4.2-beta",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-switch": "^1.2.6",
-    "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
     "bcryptjs": "^2.4.3",
     "canvas-confetti": "^1.9.4",
