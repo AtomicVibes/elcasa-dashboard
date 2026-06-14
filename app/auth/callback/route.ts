@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
   // 200 OK + JS redirect body guarantees browser processes Set-Cookie headers
   // before navigating. Cloudflare Workers (via OpenNext) does not reliably
   // flush Set-Cookie on NextResponse.redirect().
-  const destination = new URL('/dashboard', requestUrl.origin).href;
+  const destination = new URL('/sign/up', requestUrl.origin).href;
   const body = redirectHtml(destination);
   const response = new NextResponse(body, {
     status: 200,
