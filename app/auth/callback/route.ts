@@ -14,10 +14,12 @@ function redirectHtml(destination: string): string {
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
+  const state = requestUrl.searchParams.get('state');
 
   console.log('[AuthCallback] ENTRY', {
     origin: requestUrl.origin,
     hasCode: !!code,
+    hasState: !!state,
     codePreview: code ? `${code.slice(0, 12)}...${code.slice(-4)}` : null,
   });
 
@@ -31,6 +33,18 @@ export async function GET(request: NextRequest) {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('[AuthCallback] Missing Supabase env vars');
     return NextResponse.redirect(new URL('/auth?error=config', requestUrl.origin));
+  }
+
+  // ── State verification (CSRF protection) ──────────────────────────────
+  if (state) {
+    const storedState = request.cookies.get('supabase.state')?.value ?? null;
+    if (storedState && storedState !== state) {
+      console.error('[AuthCallback] State mismatch — possible CSRF', {
+        stored: storedState.slice(0, 8),
+        received: state.slice(0, 8),
+      });
+      return NextResponse.redirect(new URL('/auth?error=state_mismatch', requestUrl.origin));
+    }
   }
 
   // 200 OK + JS redirect body guarantees browser processes Set-Cookie headers
@@ -92,21 +106,13 @@ export async function GET(request: NextRequest) {
     console.log('[AuthCallback] SESSION_OBTAINED', {
       email: data.user?.email ?? null,
       userId: data.user?.id ?? null,
-      accessTokenPreview: data.session?.access_token
-        ? `${data.session.access_token.slice(0, 16)}...`
-        : null,
       expiresIn: data.session?.expires_in ?? null,
-    });
-
-    const setCookieHeaders = response.headers.getSetCookie?.() ?? [];
-    console.log('[AuthCallback] Set-Cookie headers set', {
-      count: setCookieHeaders.length,
-      names: setCookieHeaders.map(h => h.split('=')[0]),
     });
   } catch (error) {
     console.error('[AuthCallback] exchange threw', {
       name: (error as Error).name,
       message: (error as Error).message,
+      stack: (error as Error).stack?.slice(0, 500),
     });
     return NextResponse.redirect(new URL('/auth?error=exception', requestUrl.origin));
   }

@@ -83,16 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     try {
-      console.log("[AUTH_TRACE] BEFORE getSupabase().auth.getSession()");
-
-      // 8-second per-call timeout so a single stuck request never freezes the app
-      const sessionPromise = getSupabase().auth.getSession();
+      const supabase = getSupabase();
+      const sessionPromise = supabase.auth.getSession();
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("getSession timed out after 8s")), 8000),
       );
 
       const { data, error } = await Promise.race([sessionPromise, timeout]);
-      console.log("[AUTH_TRACE] AFTER getSupabase().auth.getSession()", { hasSession: !!data?.session, error });
+      console.log("[AUTH_TRACE] Session from supabase client:", data);
 
       if (error) {
         console.error("[AUTH_TRACE] getSession error:", error);
@@ -123,11 +121,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setPermissionRole(null);
     } finally {
       setLoading(false);
+      if (hangTimeoutRef.current) {
+        clearTimeout(hangTimeoutRef.current);
+        hangTimeoutRef.current = null;
+      }
       console.log("[AUTH_TRACE] loadSessionAndRole END — loading set to false");
     }
   }, []);
 
   useEffect(() => {
+    loadSessionAndRole();
+
     hangTimeoutRef.current = setTimeout(() => {
       console.error("[AUTH_TRACE] AUTH_HANG_DETECTED — 12s timeout fired, forcing loading=false (session might be stale, letting user see the page)");
       setLoading(false);

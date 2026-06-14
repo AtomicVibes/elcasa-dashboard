@@ -18,6 +18,9 @@
 # OpenNext Cloudflare build output
 /.open-next/
 
+# Wrangler local state
+/.wrangler/
+
 # Production
 /build
 

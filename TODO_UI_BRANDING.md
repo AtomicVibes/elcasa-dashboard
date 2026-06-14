@@ -8,7 +8,7 @@
 
 ## Steps
 - [ ] Locate where Dashboard navigation/header renders the main logo (likely in Sidebar or admin layout).
-- [ ] Update Dashboard logo asset reference to use `/assets/MAINLOGO.png`.
+- [ ] Update Dashboard logo asset reference to use `/MAINLOGO.png`.
 - [ ] Create a shared Tailwind class/constant for logo sizing (or apply identical classes in both components) to ensure exact same rendering.
 - [ ] Update Onboarding header logo markup to use the standardized classes.
 - [ ] Perform global search/replace for `SKADIA` and `Skadia` (including any case variants) to `ARCADIA`/`Arcadia`.
