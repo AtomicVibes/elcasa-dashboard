@@ -13,6 +13,7 @@
   "dependencies": {
     "@heroui/react": "^3.0.5",
     "@neondatabase/auth": "^0.4.2-beta",
+    "@neondatabase/neon-js": "^0.6.2-beta",
     "@neondatabase/serverless": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-popover": "^1.1.15",
@@ -27,6 +28,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hot-toast": "^2.6.0",
+    "react-router-dom": "^7.17.0",
     "stripe": "^17.7.0",
     "tailwind-merge": "^3.6.0",
     "zod": "^3.25.76"
@@ -45,7 +47,11 @@
   },
   "config": {
     "npm": {
-      "supported-platforms": ["darwin", "linux", "win32"]
+      "supported-platforms": [
+        "darwin",
+        "linux",
+        "win32"
+      ]
     }
   },
   "engines": {
