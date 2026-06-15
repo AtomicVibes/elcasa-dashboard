@@ -56,11 +56,6 @@
     "node": "22.x"
   },
   "optionalDependencies": {
-    "@ast-grep/napi-linux-x64-gnu": "^0.40.5",
-    "@cloudflare/workerd-darwin-64": "^1.20260525.1",
-    "@cloudflare/workerd-darwin-arm64": "^1.20260525.1",
-    "@cloudflare/workerd-linux-64": "^1.20260525.1",
-    "@cloudflare/workerd-linux-arm64": "^1.20260525.1",
-    "@cloudflare/workerd-windows-64": "^1.20260525.1"
+    "@ast-grep/napi-linux-x64-gnu": "^0.40.5"
   }
 }
