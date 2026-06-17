@@ -35,12 +35,16 @@ function Input({
 }
 
 function PasswordInput({
+  id,
+  name,
   value,
   onChange,
   placeholder,
   isDark,
   autoComplete,
 }: {
+  id?: string;
+  name?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder: string;
@@ -51,6 +55,8 @@ function PasswordInput({
   return (
     <div className="relative">
       <Input
+        id={id}
+        name={name}
         type={showPassword ? "text" : "password"}
         value={value}
         onChange={onChange}
@@ -295,10 +301,12 @@ export default function AuthPage() {
         <form onSubmit={activeTab === "login" ? handleLogin : handleSignUp} className="space-y-4">
           {activeTab === "signup" && (
             <div>
-              <label className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
+              <label htmlFor="fullName" className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
                 Full Name
               </label>
               <Input
+                id="fullName"
+                name="fullName"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Jane Doe"
@@ -309,10 +317,12 @@ export default function AuthPage() {
           )}
 
           <div>
-            <label className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
+            <label htmlFor="email" className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
               Email Address
             </label>
             <Input
+              id="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@company.com"
@@ -324,10 +334,12 @@ export default function AuthPage() {
 
           {activeTab === "signup" && (
             <div>
-              <label className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
+              <label htmlFor="phoneNumber" className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
                 Phone Number
               </label>
               <Input
+                id="phoneNumber"
+                name="phoneNumber"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="+1 555 123 456"
@@ -338,7 +350,7 @@ export default function AuthPage() {
           )}
 
           <div>
-            <label className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
+            <label htmlFor="password" className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
               Password
             </label>
             <PasswordInput
@@ -366,10 +378,12 @@ export default function AuthPage() {
 
           {activeTab === "signup" && (
             <div>
-              <label className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
+              <label htmlFor="confirmPassword" className={cn("text-sm font-extrabold block mb-1", isDark ? "text-zinc-200" : "text-black")}>
                 Confirm Password
               </label>
               <PasswordInput
+                id="confirmPassword"
+                name="confirmPassword"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
