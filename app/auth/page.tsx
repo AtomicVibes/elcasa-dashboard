@@ -103,20 +103,32 @@ function TabButton({
 }
 
 function getErrorMessage(err: unknown): string {
-  const message =
+  if (err) {
+    console.error("[Auth Error]", err);
+  }
+  const rawMessage =
     err && typeof err === "object" && "message" in err
-      ? String((err as { message?: unknown }).message).toLowerCase()
+      ? String((err as { message?: unknown }).message)
       : "";
+  const message = rawMessage.toLowerCase();
   if (message.includes("failed to fetch")) {
     return "Network connection lost. Please check your internet connection or server configurations.";
   }
-  if (message.includes("invalid login credentials")) {
+  if (
+    message.includes("invalid email or password") ||
+    message.includes("invalid login credentials") ||
+    message.includes("invalid password") ||
+    message.includes("user not found")
+  ) {
     return "Incorrect email or password. Please try again.";
   }
   if (message.includes("user already exists") || message.includes("already registered")) {
     return "An account with this email address already exists.";
   }
-  return message || "An unexpected error occurred. Please try again.";
+  if (message.includes("account not found")) {
+    return "No account found with this email. Please sign up first.";
+  }
+  return rawMessage || "An unexpected error occurred. Please try again.";
 }
 
 export default function AuthPage() {
@@ -193,7 +205,7 @@ export default function AuthPage() {
         password,
       });
       if (error) throw error;
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -219,7 +231,7 @@ export default function AuthPage() {
         name: fullName.trim(),
       });
       if (error) throw error;
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
