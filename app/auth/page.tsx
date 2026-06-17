@@ -1,7 +1,6 @@
 "use client";
 import { useId, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,6 +11,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { useGlobalTheme } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { authClient } from "@/lib/auth/client";
+import { signInWithEmail } from "./sign-in/actions";
+import { signUpWithEmail } from "./sign-up/actions";
 
 function Input({
   className,
@@ -138,7 +139,6 @@ function getErrorMessage(err: unknown): string {
 }
 
 export default function AuthPage() {
-  const router = useRouter();
   const { loading, authError } = useAuth();
   const { theme } = useGlobalTheme();
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
@@ -206,14 +206,17 @@ export default function AuthPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const { error } = await authClient.signIn.email({
-        email: email.trim(),
-        password,
-      });
-      if (error) throw error;
-      window.location.href = "/dashboard";
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
+      const fd = new FormData();
+      fd.set('email', email.trim());
+      fd.set('password', password);
+      const result = await signInWithEmail(null, fd);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
+      }
+    } catch {
+      // redirect handled by Next.js
+      return;
     } finally {
       setSubmitting(false);
     }
@@ -231,15 +234,18 @@ export default function AuthPage() {
     }
     setSubmitting(true);
     try {
-      const { error } = await authClient.signUp.email({
-        email: email.trim(),
-        password,
-        name: fullName.trim(),
-      });
-      if (error) throw error;
-      window.location.href = "/dashboard";
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
+      const fd = new FormData();
+      fd.set('email', email.trim());
+      fd.set('password', password);
+      fd.set('fullName', fullName.trim());
+      const result = await signUpWithEmail(null, fd);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
+      }
+    } catch {
+      // redirect handled by Next.js
+      return;
     } finally {
       setSubmitting(false);
     }
@@ -469,7 +475,7 @@ export default function AuthPage() {
         </form>
 
         <button
-          onClick={() => router.push("/onboarding")}
+          onClick={() => window.location.href = "/onboarding"}
           className={cn("w-full mt-4 text-sm font-bold transition-colors flex items-center justify-center gap-1", isDark ? "text-zinc-400 hover:text-[#FFC107]" : "text-slate-900 hover:text-[#F9A825]")}
         >
           ← Back to Onboarding
