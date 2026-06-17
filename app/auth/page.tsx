@@ -394,10 +394,9 @@ export default function AuthPage() {
           )}
 
           {activeTab === 'signup' && (
-            <div className="flex items-start space-x-3 py-2 mb-2 select-none">
+            <label className={cn("flex items-start space-x-3 py-2 mb-2 select-none cursor-pointer", isDark ? "text-zinc-300" : "text-black")}>
               <div className="flex items-center h-5">
                 <Checkbox
-                  id="terms-conditions"
                   checked={isChecked}
                   onCheckedChange={(checked) => setIsChecked(checked === true)}
                   className={cn(
@@ -406,7 +405,7 @@ export default function AuthPage() {
                   )}
                 />
               </div>
-              <label htmlFor="terms-conditions" className={cn("text-sm font-extrabold leading-normal cursor-pointer", isDark ? "text-zinc-300" : "text-black")}>
+              <span className="text-sm font-extrabold leading-normal">
                 I agree to the{" "}
                 <span
                   onClick={(e) => {
@@ -418,8 +417,8 @@ export default function AuthPage() {
                 >
                   Data Privacy & Confidentiality terms
                 </span>
-              </label>
-            </div>
+              </span>
+            </label>
           )}
 
           <button
